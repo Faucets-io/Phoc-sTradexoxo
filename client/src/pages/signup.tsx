@@ -154,10 +154,8 @@ export default function Signup() {
 
         <div className="text-center text-sm">
           <span className="text-muted-foreground">Already have an account? </span>
-          <Link href="/login">
-            <span className="text-primary hover:underline font-medium cursor-pointer" data-testid="link-login">
-              Log in
-            </span>
+          <Link href="/login" className="font-medium text-primary hover:underline">
+            Log in
           </Link>
         </div>
       </div>
