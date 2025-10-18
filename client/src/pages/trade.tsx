@@ -94,14 +94,14 @@ export default function Trade() {
 
   return (
     <DashboardLayout>
-      <div className="p-6 space-y-6">
+      <div className="h-full flex flex-col p-3 sm:p-6 gap-3 sm:gap-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-3xl font-bold font-display mb-2">{selectedPair}</h2>
+            <h2 className="text-2xl sm:text-3xl font-bold font-display mb-2">{selectedPair}</h2>
             <div className="flex items-center gap-4">
               {currentPrice && (
                 <>
-                  <p className="text-2xl font-bold font-mono" data-testid="current-price">
+                  <p className="text-xl sm:text-2xl font-bold font-mono" data-testid="current-price">
                     ${currentPrice.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                   <div className={`flex items-center gap-1 ${currentPrice.change24h >= 0 ? 'text-success' : 'text-destructive'}`}>
@@ -116,235 +116,245 @@ export default function Trade() {
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-6">
-            <Card>
-              <CardContent className="p-6">
-                <div className="aspect-video bg-muted rounded-lg flex items-center justify-center">
-                  <div className="text-center space-y-2">
-                    <TrendingUp className="h-12 w-12 mx-auto text-muted-foreground/50" />
-                    <p className="text-sm text-muted-foreground">Price Chart</p>
-                    <p className="text-xs text-muted-foreground">Real-time charts coming soon</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+        <div className="grid grid-cols-1 gap-3 sm:gap-6 flex-1">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center justify-between text-base sm:text-lg">
+                <span>BTC/USDT</span>
+                <span className="font-mono text-xl sm:text-2xl text-success">
+                  {currentPrice ? `$${currentPrice.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '$0.00'}
+                </span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-3 sm:p-6">
+              <div className="h-[300px] sm:h-[400px] bg-muted/20 rounded-lg flex items-center justify-center">
+                <p className="text-sm sm:text-base text-muted-foreground">Trading Chart</p>
+              </div>
+            </CardContent>
+          </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Order Book</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <h4 className="text-sm font-semibold text-success mb-3">Bids (Buy Orders)</h4>
-                    <div className="space-y-1">
-                      {orderBook?.bids.slice(0, 10).map((bid, i) => (
-                        <div key={i} className="flex justify-between text-sm font-mono">
-                          <span className="text-success">${bid.price.toFixed(2)}</span>
-                          <span className="text-muted-foreground">{bid.amount.toFixed(8)}</span>
-                        </div>
-                      ))}
-                      {(!orderBook?.bids || orderBook.bids.length === 0) && (
-                        <p className="text-sm text-muted-foreground">No bids</p>
-                      )}
-                    </div>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-semibold text-destructive mb-3">Asks (Sell Orders)</h4>
-                    <div className="space-y-1">
-                      {orderBook?.asks.slice(0, 10).map((ask, i) => (
-                        <div key={i} className="flex justify-between text-sm font-mono">
-                          <span className="text-destructive">${ask.price.toFixed(2)}</span>
-                          <span className="text-muted-foreground">{ask.amount.toFixed(8)}</span>
-                        </div>
-                      ))}
-                      {(!orderBook?.asks || orderBook.asks.length === 0) && (
-                        <p className="text-sm text-muted-foreground">No asks</p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base sm:text-lg">Place Order</CardTitle>
+            </CardHeader>
+            <CardContent className="p-3 sm:p-6">
+              <Tabs defaultValue="buy" onValueChange={(v) => setSide(v as "buy" | "sell")}>
+                <TabsList className="grid w-full grid-cols-2 mb-3 sm:mb-4">
+                  <TabsTrigger value="buy" className="data-[state=active]:text-success text-sm" data-testid="tab-buy">Buy</TabsTrigger>
+                  <TabsTrigger value="sell" className="data-[state=active]:text-destructive text-sm" data-testid="tab-sell">Sell</TabsTrigger>
+                </TabsList>
 
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Place Order</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Tabs defaultValue="buy" onValueChange={(v) => setSide(v as "buy" | "sell")}>
-                  <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="buy" className="data-[state=active]:text-success" data-testid="tab-buy">Buy</TabsTrigger>
-                    <TabsTrigger value="sell" className="data-[state=active]:text-destructive" data-testid="tab-sell">Sell</TabsTrigger>
-                  </TabsList>
+                <TabsContent value="buy" className="space-y-3 sm:space-y-4">
+                  <div className="space-y-2">
+                    <Label>Order Type</Label>
+                    <Tabs value={orderType} onValueChange={(v) => setOrderType(v as "market" | "limit")}>
+                      <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="market" data-testid="tab-market">Market</TabsTrigger>
+                        <TabsTrigger value="limit" data-testid="tab-limit">Limit</TabsTrigger>
+                      </TabsList>
+                    </Tabs>
+                  </div>
 
-                  <TabsContent value="buy" className="space-y-4 mt-4">
+                  {orderType === "limit" && (
                     <div className="space-y-2">
-                      <Label>Order Type</Label>
-                      <Tabs value={orderType} onValueChange={(v) => setOrderType(v as "market" | "limit")}>
-                        <TabsList className="grid w-full grid-cols-2">
-                          <TabsTrigger value="market" data-testid="tab-market">Market</TabsTrigger>
-                          <TabsTrigger value="limit" data-testid="tab-limit">Limit</TabsTrigger>
-                        </TabsList>
-                      </Tabs>
-                    </div>
-
-                    {orderType === "limit" && (
-                      <div className="space-y-2">
-                        <Label htmlFor="price">Price (USDT)</Label>
-                        <Input
-                          id="price"
-                          type="number"
-                          placeholder="0.00"
-                          value={price}
-                          onChange={(e) => setPrice(e.target.value)}
-                          data-testid="input-price"
-                        />
-                      </div>
-                    )}
-
-                    <div className="space-y-2">
-                      <Label htmlFor="amount">Amount (BTC)</Label>
+                      <Label htmlFor="price" className="text-sm">Price (USDT)</Label>
                       <Input
-                        id="amount"
+                        id="price"
                         type="number"
-                        placeholder="0.00000000"
-                        value={amount}
-                        onChange={(e) => setAmount(e.target.value)}
-                        data-testid="input-amount"
+                        step="0.01"
+                        placeholder="0.00"
+                        value={price}
+                        onChange={(e) => setPrice(e.target.value)}
+                        className="font-mono text-base h-12"
+                        inputMode="decimal"
                       />
                     </div>
-
-                    <div className="p-3 rounded-lg bg-muted space-y-1">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Total</span>
-                        <span className="font-mono font-semibold">
-                          {amount && (orderType === "market" && (livePrice || currentPrice?.price) || orderType === "limit" && price)
-                            ? `$${(parseFloat(amount) * (orderType === "market" ? (livePrice || currentPrice!.price) : parseFloat(price))).toFixed(2)}`
-                            : "$0.00"}
-                        </span>
-                      </div>
-                    </div>
-
-                    <Button
-                      className="w-full bg-success hover:bg-success/90 text-white"
-                      onClick={handlePlaceOrder}
-                      disabled={!amount || (orderType === "limit" && !price) || placeMutation.isPending}
-                      data-testid="button-place-buy-order"
-                    >
-                      {placeMutation.isPending ? "Placing Order..." : "Buy BTC"}
-                    </Button>
-                  </TabsContent>
-
-                  <TabsContent value="sell" className="space-y-4 mt-4">
-                    <div className="space-y-2">
-                      <Label>Order Type</Label>
-                      <Tabs value={orderType} onValueChange={(v) => setOrderType(v as "market" | "limit")}>
-                        <TabsList className="grid w-full grid-cols-2">
-                          <TabsTrigger value="market" data-testid="tab-market">Market</TabsTrigger>
-                          <TabsTrigger value="limit" data-testid="tab-limit">Limit</TabsTrigger>
-                        </TabsList>
-                      </Tabs>
-                    </div>
-
-                    {orderType === "limit" && (
-                      <div className="space-y-2">
-                        <Label htmlFor="sell-price">Price (USDT)</Label>
-                        <Input
-                          id="sell-price"
-                          type="number"
-                          placeholder="0.00"
-                          value={price}
-                          onChange={(e) => setPrice(e.target.value)}
-                          data-testid="input-price"
-                        />
-                      </div>
-                    )}
-
-                    <div className="space-y-2">
-                      <Label htmlFor="sell-amount">Amount (BTC)</Label>
-                      <Input
-                        id="sell-amount"
-                        type="number"
-                        placeholder="0.00000000"
-                        value={amount}
-                        onChange={(e) => setAmount(e.target.value)}
-                        data-testid="input-amount"
-                      />
-                    </div>
-
-                    <div className="p-3 rounded-lg bg-muted space-y-1">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Total</span>
-                        <span className="font-mono font-semibold">
-                          {amount && (orderType === "market" && (livePrice || currentPrice?.price) || orderType === "limit" && price)
-                            ? `$${(parseFloat(amount) * (orderType === "market" ? (livePrice || currentPrice!.price) : parseFloat(price))).toFixed(2)}`
-                            : "$0.00"}
-                        </span>
-                      </div>
-                    </div>
-
-                    <Button
-                      className="w-full bg-destructive hover:bg-destructive/90 text-white"
-                      onClick={handlePlaceOrder}
-                      disabled={!amount || (orderType === "limit" && !price) || placeMutation.isPending}
-                      data-testid="button-place-sell-order"
-                    >
-                      {placeMutation.isPending ? "Placing Order..." : "Sell BTC"}
-                    </Button>
-                  </TabsContent>
-                </Tabs>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Open Orders</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {orders && orders.filter(o => o.status === "pending" || o.status === "partial").length > 0 ? (
-                    orders.filter(o => o.status === "pending" || o.status === "partial").map((order) => (
-                      <div key={order.id} className="p-3 rounded-lg border border-border space-y-2" data-testid={`order-${order.id}`}>
-                        <div className="flex items-center justify-between">
-                          <Badge variant={order.side === "buy" ? "default" : "destructive"} className={order.side === "buy" ? "bg-success" : ""}>
-                            {order.side.toUpperCase()}
-                          </Badge>
-                          <Badge variant="outline">{order.type}</Badge>
-                        </div>
-                        <div className="space-y-1 text-sm">
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Amount</span>
-                            <span className="font-mono">{parseFloat(order.amount).toFixed(8)} {order.baseCurrency}</span>
-                          </div>
-                          {order.price && (
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">Price</span>
-                              <span className="font-mono">${parseFloat(order.price).toFixed(2)}</span>
-                            </div>
-                          )}
-                        </div>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          className="w-full"
-                          onClick={() => cancelMutation.mutate(order.id)}
-                          data-testid={`button-cancel-${order.id}`}
-                        >
-                          Cancel Order
-                        </Button>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="text-sm text-muted-foreground text-center py-4">No open orders</p>
                   )}
+
+                  <div className="space-y-2">
+                    <Label htmlFor="amount" className="text-sm">Amount (BTC)</Label>
+                    <Input
+                      id="amount"
+                      type="number"
+                      step="0.00000001"
+                      placeholder="0.00000000"
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                      className="font-mono text-base h-12"
+                      inputMode="decimal"
+                    />
+                  </div>
+
+                  <div className="p-3 rounded-lg bg-muted space-y-1">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Total</span>
+                      <span className="font-mono font-semibold">
+                        {amount && (orderType === "market" && (livePrice || currentPrice?.price) || orderType === "limit" && price)
+                          ? `$${(parseFloat(amount) * (orderType === "market" ? (livePrice || currentPrice!.price) : parseFloat(price))).toFixed(2)}`
+                          : "$0.00"}
+                      </span>
+                    </div>
+                  </div>
+
+                  <Button
+                    className="w-full h-12 text-base bg-success hover:bg-success/90 text-white"
+                    onClick={handlePlaceOrder}
+                    disabled={!amount || (orderType === "limit" && !price) || placeMutation.isPending}
+                    data-testid="button-place-buy-order"
+                  >
+                    {placeMutation.isPending ? "Placing Order..." : "Buy BTC"}
+                  </Button>
+                </TabsContent>
+
+                <TabsContent value="sell" className="space-y-3 sm:space-y-4">
+                  <div className="space-y-2">
+                    <Label>Order Type</Label>
+                    <Tabs value={orderType} onValueChange={(v) => setOrderType(v as "market" | "limit")}>
+                      <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="market" data-testid="tab-market">Market</TabsTrigger>
+                        <TabsTrigger value="limit" data-testid="tab-limit">Limit</TabsTrigger>
+                      </TabsList>
+                    </Tabs>
+                  </div>
+
+                  {orderType === "limit" && (
+                    <div className="space-y-2">
+                      <Label htmlFor="sell-price" className="text-sm">Price (USDT)</Label>
+                      <Input
+                        id="sell-price"
+                        type="number"
+                        step="0.01"
+                        placeholder="0.00"
+                        value={price}
+                        onChange={(e) => setPrice(e.target.value)}
+                        className="font-mono text-base h-12"
+                        inputMode="decimal"
+                      />
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <Label htmlFor="sell-amount" className="text-sm">Amount (BTC)</Label>
+                    <Input
+                      id="sell-amount"
+                      type="number"
+                      step="0.00000001"
+                      placeholder="0.00000000"
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                      className="font-mono text-base h-12"
+                      inputMode="decimal"
+                    />
+                  </div>
+
+                  <div className="p-3 rounded-lg bg-muted space-y-1">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Total</span>
+                      <span className="font-mono font-semibold">
+                        {amount && (orderType === "market" && (livePrice || currentPrice?.price) || orderType === "limit" && price)
+                          ? `$${(parseFloat(amount) * (orderType === "market" ? (livePrice || currentPrice!.price) : parseFloat(price))).toFixed(2)}`
+                          : "$0.00"}
+                      </span>
+                    </div>
+                  </div>
+
+                  <Button
+                    className="w-full h-12 text-base bg-destructive hover:bg-destructive/90 text-white"
+                    onClick={handlePlaceOrder}
+                    disabled={!amount || (orderType === "limit" && !price) || placeMutation.isPending}
+                    data-testid="button-place-sell-order"
+                  >
+                    {placeMutation.isPending ? "Placing Order..." : "Sell BTC"}
+                  </Button>
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="grid grid-cols-1 gap-3 sm:gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Order Book</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h4 className="text-sm font-semibold text-success mb-3">Bids (Buy Orders)</h4>
+                  <div className="space-y-1">
+                    {orderBook?.bids.slice(0, 10).map((bid, i) => (
+                      <div key={i} className="flex justify-between text-sm font-mono">
+                        <span className="text-success">${bid.price.toFixed(2)}</span>
+                        <span className="text-muted-foreground">{bid.amount.toFixed(8)}</span>
+                      </div>
+                    ))}
+                    {(!orderBook?.bids || orderBook.bids.length === 0) && (
+                      <p className="text-sm text-muted-foreground">No bids</p>
+                    )}
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
+                <div>
+                  <h4 className="text-sm font-semibold text-destructive mb-3">Asks (Sell Orders)</h4>
+                  <div className="space-y-1">
+                    {orderBook?.asks.slice(0, 10).map((ask, i) => (
+                      <div key={i} className="flex justify-between text-sm font-mono">
+                        <span className="text-destructive">${ask.price.toFixed(2)}</span>
+                        <span className="text-muted-foreground">{ask.amount.toFixed(8)}</span>
+                      </div>
+                    ))}
+                    {(!orderBook?.asks || orderBook.asks.length === 0) && (
+                      <p className="text-sm text-muted-foreground">No asks</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Open Orders</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {orders && orders.filter(o => o.status === "pending" || o.status === "partial").length > 0 ? (
+                  orders.filter(o => o.status === "pending" || o.status === "partial").map((order) => (
+                    <div key={order.id} className="p-3 rounded-lg border border-border space-y-2" data-testid={`order-${order.id}`}>
+                      <div className="flex items-center justify-between">
+                        <Badge variant={order.side === "buy" ? "default" : "destructive"} className={order.side === "buy" ? "bg-success" : ""}>
+                          {order.side.toUpperCase()}
+                        </Badge>
+                        <Badge variant="outline">{order.type}</Badge>
+                      </div>
+                      <div className="space-y-1 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Amount</span>
+                          <span className="font-mono">{parseFloat(order.amount).toFixed(8)} {order.baseCurrency}</span>
+                        </div>
+                        {order.price && (
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Price</span>
+                            <span className="font-mono">${parseFloat(order.price).toFixed(2)}</span>
+                          </div>
+                        )}
+                      </div>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        className="w-full"
+                        onClick={() => cancelMutation.mutate(order.id)}
+                        data-testid={`button-cancel-${order.id}`}
+                      >
+                        Cancel Order
+                      </Button>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center py-4">No open orders</p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </DashboardLayout>

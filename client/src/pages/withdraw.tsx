@@ -72,7 +72,7 @@ export default function Withdraw() {
 
   return (
     <DashboardLayout>
-      <div className="p-6 max-w-2xl mx-auto space-y-6">
+      <div className="p-3 sm:p-6 max-w-2xl mx-auto space-y-4 sm:space-y-6">
         <div>
           <h2 className="text-3xl font-bold font-display mb-2">Withdraw Cryptocurrency</h2>
           <p className="text-muted-foreground">Send funds to an external wallet</p>

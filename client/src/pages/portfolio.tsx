@@ -30,13 +30,13 @@ export default function Portfolio() {
 
   return (
     <DashboardLayout>
-      <div className="p-6 space-y-6">
+      <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
         <div>
           <h2 className="text-3xl font-bold font-display mb-2">Portfolio</h2>
           <p className="text-muted-foreground">Manage your cryptocurrency holdings</p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-muted-foreground">Total Balance</CardTitle>

@@ -21,7 +21,7 @@ export default function Dashboard() {
   const { data: initialMarkets, isLoading } = useQuery<CryptoPrice[]>({
     queryKey: ["/api/markets"],
   });
-  
+
   const [markets, setMarkets] = useState<CryptoPrice[]>([]);
   const { lastMessage, isConnected } = useWebSocket();
 
@@ -61,7 +61,7 @@ export default function Dashboard() {
         </div>
 
         {isLoading ? (
-          <div className="grid gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             {[1, 2, 3, 4].map((i) => (
               <Card key={i}>
                 <CardContent className="p-6">
@@ -74,7 +74,7 @@ export default function Dashboard() {
             ))}
           </div>
         ) : (
-          <div className="grid gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             {markets?.map((market) => (
               <Card key={market.symbol} className="hover-elevate transition-all" data-testid={`market-card-${market.symbol}`}>
                 <CardContent className="p-6">

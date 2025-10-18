@@ -1,7 +1,7 @@
 import { ReactNode, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Home, TrendingUp, Wallet, History, LogOut, BarChart3, ArrowDownToLine, ArrowUpFromLine } from "lucide-react";
+import { Home, TrendingUp, Wallet, History, LogOut, BarChart3, ArrowDownToLine, ArrowUpFromLine, Menu } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -14,11 +14,13 @@ import {
   SidebarMenuItem,
   SidebarProvider,
   SidebarFooter,
+  SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useIsMobile } from "@/hooks/use-mobile";
 import type { User } from "@shared/schema";
 
 interface DashboardLayoutProps {
@@ -57,6 +59,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     { title: "Trading History", url: "/history", icon: BarChart3 },
   ];
 
+  const isMobile = useIsMobile();
+
   const style = {
     "--sidebar-width": "16rem",
     "--sidebar-width-icon": "3rem",
@@ -65,7 +69,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
     <SidebarProvider style={style as React.CSSProperties}>
       <div className="flex h-screen w-full">
-        <Sidebar>
+        <Sidebar collapsible={isMobile ? "offcanvas" : "icon"}>
           <SidebarHeader className="p-4">
             <Link href="/dashboard">
               <div className="flex items-center gap-2 hover-elevate p-2 rounded-lg cursor-pointer">
@@ -153,9 +157,14 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         </Sidebar>
 
         <div className="flex flex-col flex-1 overflow-hidden">
-          <header className="flex items-center justify-between h-14 px-6 border-b border-border bg-background">
+          <header className="flex items-center justify-between h-14 px-4 sm:px-6 border-b border-border bg-background">
             <div className="flex items-center gap-2">
-              <h1 className="font-semibold text-lg">
+              <SidebarTrigger className="lg:hidden">
+                <Button variant="ghost" size="icon">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SidebarTrigger>
+              <h1 className="font-semibold text-base sm:text-lg">
                 {menuItems.find(item => item.url === location)?.title || 
                  location === '/deposit' ? 'Deposit' :
                  location === '/withdraw' ? 'Withdraw' :
