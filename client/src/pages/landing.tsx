@@ -49,25 +49,26 @@ export default function Landing() {
   return (
     <div className="min-h-screen bg-background">
       <header className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background/80 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-6 lg:px-12">
-          <div className="flex items-center justify-between h-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12">
+          <div className="flex items-center justify-between h-14 sm:h-16">
             <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-                <BarChart3 className="h-5 w-5 text-primary-foreground" />
+              <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg bg-primary flex items-center justify-center">
+                <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5 text-primary-foreground" />
               </div>
-              <span className="font-display text-xl font-bold">CryptoTrade</span>
+              <span className="font-display text-lg sm:text-xl font-bold">CryptoTrade</span>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-4">
               <ThemeToggle />
               <Link href="/login">
-                <Button variant="ghost" data-testid="link-login">
+                <Button variant="ghost" size="sm" className="hidden sm:inline-flex" data-testid="link-login">
                   Log In
                 </Button>
               </Link>
               <Link href="/signup">
-                <Button data-testid="link-signup">
-                  Get Started
-                  <ArrowRight className="ml-2 h-4 w-4" />
+                <Button size="sm" data-testid="link-signup">
+                  <span className="hidden sm:inline">Get Started</span>
+                  <span className="sm:hidden">Sign Up</span>
+                  <ArrowRight className="ml-1 sm:ml-2 h-3 w-3 sm:h-4 sm:w-4" />
                 </Button>
               </Link>
             </div>
@@ -75,31 +76,31 @@ export default function Landing() {
         </div>
       </header>
 
-      <section className="relative pt-32 pb-20 px-6 lg:px-12 overflow-hidden">
+      <section className="relative pt-20 sm:pt-32 pb-12 sm:pb-20 px-4 sm:px-6 lg:px-12 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-background" />
         <div className="max-w-7xl mx-auto relative">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div className="space-y-8">
-              <Badge className="w-fit" variant="secondary">
+          <div className="grid lg:grid-cols-2 gap-8 sm:gap-12 items-center">
+            <div className="space-y-6 sm:space-y-8">
+              <Badge className="w-fit text-xs sm:text-sm" variant="secondary">
                 Trusted by 150K+ Traders Worldwide
               </Badge>
-              <h1 className="font-display text-5xl lg:text-6xl font-bold leading-tight">
+              <h1 className="font-display text-3xl sm:text-5xl lg:text-6xl font-bold leading-tight">
                 Trade Crypto with{" "}
                 <span className="text-primary">Confidence</span>
               </h1>
-              <p className="text-xl text-muted-foreground leading-relaxed">
+              <p className="text-base sm:text-xl text-muted-foreground leading-relaxed">
                 Access the world's leading cryptocurrency exchange. Trade Bitcoin, Ethereum,
                 and 200+ digital assets with professional tools and bank-grade security.
               </p>
-              <div className="flex flex-wrap gap-4">
-                <Link href="/signup">
-                  <Button size="lg" className="text-lg" data-testid="button-hero-signup">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                <Link href="/signup" className="w-full sm:w-auto">
+                  <Button size="lg" className="w-full sm:w-auto text-base sm:text-lg" data-testid="button-hero-signup">
                     Start Trading Now
-                    <ArrowRight className="ml-2 h-5 w-5" />
+                    <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
                   </Button>
                 </Link>
-                <Link href="/login">
-                  <Button size="lg" variant="outline" className="text-lg" data-testid="button-hero-login">
+                <Link href="/login" className="w-full sm:w-auto">
+                  <Button size="lg" variant="outline" className="w-full sm:w-auto text-base sm:text-lg" data-testid="button-hero-login">
                     View Markets
                   </Button>
                 </Link>
