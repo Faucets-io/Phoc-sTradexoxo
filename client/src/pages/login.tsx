@@ -138,9 +138,9 @@ export default function Login() {
         <div className="text-center text-sm">
           <span className="text-muted-foreground">Don't have an account? </span>
           <Link href="/signup">
-            <a className="text-primary hover:underline font-medium" data-testid="link-signup">
+            <span className="text-primary hover:underline font-medium cursor-pointer" data-testid="link-signup">
               Sign up
-            </a>
+            </span>
           </Link>
         </div>
       </div>
