@@ -91,27 +91,30 @@ export default function Portfolio() {
             <div className="grid gap-4">
               {wallets.map((wallet) => (
                 <Card key={wallet.id} className="hover-elevate transition-all" data-testid={`wallet-${wallet.currency}`}>
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                  <CardContent className="p-4">
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3">
+                        <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                           <WalletIcon className="h-6 w-6 text-primary" />
                         </div>
-                        <div>
-                          <h4 className="font-semibold text-lg">{wallet.currency}</h4>
-                          <p className="text-sm text-muted-foreground">Wallet Address</p>
-                          <p className="text-xs font-mono text-muted-foreground">{wallet.address}</p>
+                        <div className="min-w-0 flex-1">
+                          <h4 className="font-semibold text-base">{wallet.currency}</h4>
+                          <p className="text-sm text-muted-foreground">Balance</p>
                         </div>
                       </div>
 
-                      <div className="text-right">
-                        <p className="text-sm text-muted-foreground mb-1">Balance</p>
-                        <p className="text-2xl font-bold font-mono" data-testid={`balance-${wallet.currency}`}>
+                      <div>
+                        <p className="text-xl font-bold font-mono mb-1" data-testid={`balance-${wallet.currency}`}>
                           {formatBalance(wallet.balance)} {wallet.currency}
                         </p>
-                        <p className="text-sm text-muted-foreground mt-1">
+                        <p className="text-sm text-muted-foreground">
                           ≈ ${(parseFloat(wallet.balance) * getPrice(wallet.currency)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </p>
+                      </div>
+
+                      <div className="pt-2 border-t">
+                        <p className="text-xs text-muted-foreground mb-1">Wallet Address</p>
+                        <p className="text-xs font-mono text-muted-foreground break-all">{wallet.address}</p>
                       </div>
                     </div>
                   </CardContent>

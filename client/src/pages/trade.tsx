@@ -116,19 +116,19 @@ export default function Trade() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-3 sm:gap-6 flex-1">
+        <div className="space-y-3 sm:space-y-6 flex-1">
           <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center justify-between text-base sm:text-lg">
-                <span>BTC/USDT</span>
-                <span className="font-mono text-xl sm:text-2xl text-success">
+            <CardHeader className="pb-3 p-4">
+              <CardTitle className="flex flex-col gap-2 text-base">
+                <span className="text-muted-foreground text-sm">BTC/USDT</span>
+                <span className="font-mono text-2xl text-success">
                   {currentPrice ? `$${currentPrice.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '$0.00'}
                 </span>
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-3 sm:p-6">
-              <div className="h-[300px] sm:h-[400px] bg-muted/20 rounded-lg flex items-center justify-center">
-                <p className="text-sm sm:text-base text-muted-foreground">Trading Chart</p>
+            <CardContent className="p-4">
+              <div className="h-[250px] bg-muted/20 rounded-lg flex items-center justify-center">
+                <p className="text-sm text-muted-foreground">Trading Chart</p>
               </div>
             </CardContent>
           </Card>

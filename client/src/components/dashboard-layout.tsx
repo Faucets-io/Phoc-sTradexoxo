@@ -157,21 +157,23 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         </Sidebar>
 
         <div className="flex flex-col flex-1 overflow-hidden">
-          <header className="flex items-center justify-between h-14 px-4 sm:px-6 border-b border-border bg-background">
-            <div className="flex items-center gap-2">
-              <SidebarTrigger className="lg:hidden">
+          <header className="flex items-center justify-between h-14 px-4 sm:px-6 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              <SidebarTrigger className="lg:hidden flex-shrink-0">
                 <Button variant="ghost" size="icon">
                   <Menu className="h-5 w-5" />
                 </Button>
               </SidebarTrigger>
-              <h1 className="font-semibold text-base sm:text-lg">
+              <h1 className="font-semibold text-base sm:text-lg truncate">
                 {menuItems.find(item => item.url === location)?.title || 
                  location === '/deposit' ? 'Deposit' :
                  location === '/withdraw' ? 'Withdraw' :
                  'Dashboard'}
               </h1>
             </div>
-            <ThemeToggle />
+            <div className="flex-shrink-0">
+              <ThemeToggle />
+            </div>
           </header>
           <main className="flex-1 overflow-auto">
             {children}
