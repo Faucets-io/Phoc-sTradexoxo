@@ -87,14 +87,14 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                     const isActive = location === item.url;
                     return (
                       <SidebarMenuItem key={item.title}>
-                        <SidebarMenuButton asChild isActive={isActive}>
-                          <Link href={item.url}>
+                        <Link href={item.url}>
+                          <SidebarMenuButton asChild isActive={isActive}>
                             <a className="flex items-center gap-3 w-full" data-testid={`link-${item.title.toLowerCase().replace(/\s+/g, '-')}`}>
                               <Icon className="h-4 w-4" />
                               <span>{item.title}</span>
                             </a>
-                          </Link>
-                        </SidebarMenuButton>
+                          </SidebarMenuButton>
+                        </Link>
                       </SidebarMenuItem>
                     );
                   })}
@@ -107,24 +107,24 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               <SidebarGroupContent>
                 <SidebarMenu>
                   <SidebarMenuItem>
-                    <SidebarMenuButton asChild>
-                      <Link href="/deposit">
+                    <Link href="/deposit">
+                      <SidebarMenuButton asChild>
                         <a className="flex items-center gap-3 w-full" data-testid="link-deposit">
                           <ArrowDownToLine className="h-4 w-4 text-success" />
                           <span>Deposit</span>
                         </a>
-                      </Link>
-                    </SidebarMenuButton>
+                      </SidebarMenuButton>
+                    </Link>
                   </SidebarMenuItem>
                   <SidebarMenuItem>
-                    <SidebarMenuButton asChild>
-                      <Link href="/withdraw">
+                    <Link href="/withdraw">
+                      <SidebarMenuButton asChild>
                         <a className="flex items-center gap-3 w-full" data-testid="link-withdraw">
                           <ArrowUpFromLine className="h-4 w-4 text-destructive" />
                           <span>Withdraw</span>
                         </a>
-                      </Link>
-                    </SidebarMenuButton>
+                      </SidebarMenuButton>
+                    </Link>
                   </SidebarMenuItem>
                 </SidebarMenu>
               </SidebarGroupContent>
