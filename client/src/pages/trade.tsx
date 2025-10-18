@@ -20,6 +20,10 @@ export default function Trade() {
   const [amount, setAmount] = useState("");
   const [price, setPrice] = useState("");
 
+  // Assume livePrice is fetched from a WebSocket or another real-time source
+  // For demonstration, let's use a placeholder or a mock value
+  const livePrice = 40000; // Example live price
+
   const { data: currentPrice } = useQuery<{ price: number; change24h: number }>({
     queryKey: ["/api/markets/price", selectedPair],
   });
@@ -218,8 +222,8 @@ export default function Trade() {
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Total</span>
                         <span className="font-mono font-semibold">
-                          {amount && (orderType === "market" && currentPrice?.price || orderType === "limit" && price)
-                            ? `$${(parseFloat(amount) * (orderType === "market" ? currentPrice!.price : parseFloat(price))).toFixed(2)}`
+                          {amount && (orderType === "market" && (livePrice || currentPrice?.price) || orderType === "limit" && price)
+                            ? `$${(parseFloat(amount) * (orderType === "market" ? (livePrice || currentPrice!.price) : parseFloat(price))).toFixed(2)}`
                             : "$0.00"}
                         </span>
                       </div>
@@ -276,8 +280,8 @@ export default function Trade() {
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Total</span>
                         <span className="font-mono font-semibold">
-                          {amount && (orderType === "market" && currentPrice?.price || orderType === "limit" && price)
-                            ? `$${(parseFloat(amount) * (orderType === "market" ? currentPrice!.price : parseFloat(price))).toFixed(2)}`
+                          {amount && (orderType === "market" && (livePrice || currentPrice?.price) || orderType === "limit" && price)
+                            ? `$${(parseFloat(amount) * (orderType === "market" ? (livePrice || currentPrice!.price) : parseFloat(price))).toFixed(2)}`
                             : "$0.00"}
                         </span>
                       </div>

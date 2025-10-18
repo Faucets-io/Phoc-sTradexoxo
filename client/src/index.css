@@ -9,7 +9,7 @@
       font-size: 14px;
     }
   }
-  
+
   /* Improve touch targets on mobile */
   @media (hover: none) {
     button, a {
@@ -82,9 +82,12 @@
   --accent-foreground: 210 25% 20%;
 
   --destructive: 0 70% 55%;
-
   --destructive-foreground: 0 0% 100%;
 
+  --chart-primary: 180 100% 45%;
+  --chart-secondary: 200 100% 45%;
+
+  --border: 210 10% 88%;
   --input: 210 12% 80%;
   --ring: 200 100% 40%;
   --chart-1: 200 100% 35%;
@@ -200,8 +203,10 @@
   --accent-foreground: 210 8% 85%;
 
   --destructive: 0 70% 50%;
-
   --destructive-foreground: 0 0% 100%;
+
+  --chart-primary: 180 100% 45%;
+  --chart-secondary: 200 100% 45%;
 
   --input: 210 15% 28%;
   --ring: 200 100% 45%;
@@ -341,5 +346,23 @@
   .border.active-elevate-2:not(.no-active-interaction-elevate)::after,
   .border.hover-elevate:not(.no-hover-interaction-elevate)::after {
     inset: -1px;
+  }
+
+  .hover-elevate:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px -4px rgba(0, 0, 0, 0.3);
+  }
+
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
+
+  .animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
 }
