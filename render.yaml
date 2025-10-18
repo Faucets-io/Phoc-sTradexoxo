@@ -1,0 +1,28 @@
+
+services:
+  - type: web
+    name: cryptotrade
+    env: node
+    region: oregon
+    plan: starter
+    buildCommand: npm install && npm run build
+    startCommand: npm run start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: cryptotrade-db
+          property: connectionString
+    healthCheckPath: /
+
+databases:
+  - name: cryptotrade-db
+    databaseName: cryptotrade
+    user: cryptotrade
+    region: oregon
+    plan: starter
