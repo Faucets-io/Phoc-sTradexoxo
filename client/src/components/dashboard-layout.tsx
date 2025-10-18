@@ -54,6 +54,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     { title: "Trade", url: "/trade", icon: TrendingUp },
     { title: "Portfolio", url: "/portfolio", icon: Wallet },
     { title: "Transactions", url: "/transactions", icon: History },
+    { title: "Trading History", url: "/history", icon: BarChart3 },
   ];
 
   const style = {
@@ -86,12 +87,12 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                     const isActive = location === item.url;
                     return (
                       <SidebarMenuItem key={item.title}>
-                        <SidebarMenuButton asChild data-active={isActive}>
+                        <SidebarMenuButton asChild isActive={isActive}>
                           <Link href={item.url}>
-                            <div className={`flex items-center gap-2 ${isActive ? 'text-sidebar-primary' : ''}`} data-testid={`link-${item.title.toLowerCase()}`}>
+                            <a className="flex items-center gap-3 w-full" data-testid={`link-${item.title.toLowerCase().replace(/\s+/g, '-')}`}>
                               <Icon className="h-4 w-4" />
                               <span>{item.title}</span>
-                            </div>
+                            </a>
                           </Link>
                         </SidebarMenuButton>
                       </SidebarMenuItem>
@@ -108,20 +109,20 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                   <SidebarMenuItem>
                     <SidebarMenuButton asChild>
                       <Link href="/deposit">
-                        <div className="flex items-center gap-2" data-testid="link-deposit">
+                        <a className="flex items-center gap-3 w-full" data-testid="link-deposit">
                           <ArrowDownToLine className="h-4 w-4 text-success" />
                           <span>Deposit</span>
-                        </div>
+                        </a>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                   <SidebarMenuItem>
                     <SidebarMenuButton asChild>
                       <Link href="/withdraw">
-                        <div className="flex items-center gap-2" data-testid="link-withdraw">
+                        <a className="flex items-center gap-3 w-full" data-testid="link-withdraw">
                           <ArrowUpFromLine className="h-4 w-4 text-destructive" />
                           <span>Withdraw</span>
-                        </div>
+                        </a>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -154,8 +155,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         <div className="flex flex-col flex-1 overflow-hidden">
           <header className="flex items-center justify-between h-14 px-6 border-b border-border bg-background">
             <div className="flex items-center gap-2">
-              <h1 className="font-semibold capitalize">
-                {location.split('/').pop() || 'Dashboard'}
+              <h1 className="font-semibold text-lg">
+                {menuItems.find(item => item.url === location)?.title || 
+                 location === '/deposit' ? 'Deposit' :
+                 location === '/withdraw' ? 'Withdraw' :
+                 'Dashboard'}
               </h1>
             </div>
             <ThemeToggle />

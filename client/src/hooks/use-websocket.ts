@@ -29,10 +29,6 @@ export function useWebSocket() {
     websocket.onclose = () => {
       console.log('WebSocket disconnected');
       setIsConnected(false);
-      // Reconnect after 3 seconds
-      setTimeout(() => {
-        window.location.reload();
-      }, 3000);
     };
 
     websocket.onerror = (error) => {
