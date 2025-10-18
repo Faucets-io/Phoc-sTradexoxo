@@ -1,3 +1,4 @@
+
 import type { Express } from "express";
 import { db } from "./db";
 import { users, wallets, orders, trades, transactions } from "@shared/schema";
@@ -5,6 +6,165 @@ import { eq, and, or, desc, sql } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { insertUserSchema, loginSchema, insertOrderSchema, insertTransactionSchema } from "@shared/schema";
 import { requireAuth, type AuthRequest } from "./auth";
+
+// Simple in-memory cache for crypto prices
+let priceCache: Record<string, { price: number; change24h: number; volume24h: number; marketCap: number; lastUpdated: number }> = {};
+
+async function fetchCryptoPrices() {
+  try {
+    const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,binancecoin,solana&vs_currencies=usd&include_24hr_change=true&include_24hr_vol=true&include_market_cap=true');
+    const data = await response.json();
+    
+    priceCache = {
+      "BTC/USDT": {
+        price: data.bitcoin?.usd || 42156.84,
+        change24h: data.bitcoin?.usd_24h_change || 5.24,
+        volume24h: data.bitcoin?.usd_24h_vol || 28500000000,
+        marketCap: data.bitcoin?.usd_market_cap || 825000000000,
+        lastUpdated: Date.now()
+      },
+      "ETH/USDT": {
+        price: data.ethereum?.usd || 2235.67,
+        change24h: data.ethereum?.usd_24h_change || -2.15,
+        volume24h: data.ethereum?.usd_24h_vol || 15200000000,
+        marketCap: data.ethereum?.usd_market_cap || 268000000000,
+        lastUpdated: Date.now()
+      },
+      "BNB/USDT": {
+        price: data.binancecoin?.usd || 315.42,
+        change24h: data.binancecoin?.usd_24h_change || 3.87,
+        volume24h: data.binancecoin?.usd_24h_vol || 1800000000,
+        marketCap: data.binancecoin?.usd_market_cap || 48500000000,
+        lastUpdated: Date.now()
+      },
+      "SOL/USDT": {
+        price: data.solana?.usd || 98.23,
+        change24h: data.solana?.usd_24h_change || 8.45,
+        volume24h: data.solana?.usd_24h_vol || 2100000000,
+        marketCap: data.solana?.usd_market_cap || 42000000000,
+        lastUpdated: Date.now()
+      }
+    };
+  } catch (error) {
+    console.error('Failed to fetch crypto prices:', error);
+  }
+}
+
+// Update prices every 60 seconds
+setInterval(fetchCryptoPrices, 60000);
+fetchCryptoPrices(); // Initial fetch
+
+async function matchOrders(newOrder: any) {
+  const opposingSide = newOrder.side === "buy" ? "sell" : "buy";
+  
+  const opposingOrders = await db
+    .select()
+    .from(orders)
+    .where(
+      and(
+        eq(orders.pair, newOrder.pair),
+        eq(orders.side, opposingSide),
+        eq(orders.status, "pending"),
+        sql`${orders.userId} != ${newOrder.userId}`
+      )
+    )
+    .orderBy(newOrder.side === "buy" ? sql`CAST(${orders.price} AS DECIMAL) ASC` : sql`CAST(${orders.price} AS DECIMAL) DESC`);
+
+  let remainingAmount = parseFloat(newOrder.amount) - parseFloat(newOrder.filled);
+
+  for (const opposingOrder of opposingOrders) {
+    if (remainingAmount <= 0) break;
+
+    const newOrderPrice = parseFloat(newOrder.price || "0");
+    const opposingOrderPrice = parseFloat(opposingOrder.price || "0");
+
+    if (newOrder.type === "limit") {
+      if (newOrder.side === "buy" && newOrderPrice < opposingOrderPrice) continue;
+      if (newOrder.side === "sell" && newOrderPrice > opposingOrderPrice) continue;
+    }
+
+    const opposingRemaining = parseFloat(opposingOrder.amount) - parseFloat(opposingOrder.filled);
+    const matchAmount = Math.min(remainingAmount, opposingRemaining);
+    const executionPrice = opposingOrderPrice;
+
+    const [buyOrder, sellOrder] = newOrder.side === "buy" 
+      ? [newOrder, opposingOrder] 
+      : [opposingOrder, newOrder];
+
+    await db.insert(trades).values({
+      buyOrderId: buyOrder.id,
+      sellOrderId: sellOrder.id,
+      pair: newOrder.pair,
+      amount: matchAmount.toString(),
+      price: executionPrice.toString(),
+    });
+
+    const [buyerWallet] = await db
+      .select()
+      .from(wallets)
+      .where(and(eq(wallets.userId, buyOrder.userId), eq(wallets.currency, buyOrder.baseCurrency)))
+      .limit(1);
+
+    const [sellerWallet] = await db
+      .select()
+      .from(wallets)
+      .where(and(eq(wallets.userId, sellOrder.userId), eq(wallets.currency, sellOrder.baseCurrency)))
+      .limit(1);
+
+    const [buyerQuoteWallet] = await db
+      .select()
+      .from(wallets)
+      .where(and(eq(wallets.userId, buyOrder.userId), eq(wallets.currency, buyOrder.quoteCurrency)))
+      .limit(1);
+
+    const [sellerQuoteWallet] = await db
+      .select()
+      .from(wallets)
+      .where(and(eq(wallets.userId, sellOrder.userId), eq(wallets.currency, sellOrder.quoteCurrency)))
+      .limit(1);
+
+    await db
+      .update(wallets)
+      .set({ balance: sql`${wallets.balance} + ${matchAmount}` })
+      .where(eq(wallets.id, buyerWallet.id));
+
+    await db
+      .update(wallets)
+      .set({ balance: sql`${wallets.balance} - ${matchAmount}` })
+      .where(eq(wallets.id, sellerWallet.id));
+
+    await db
+      .update(wallets)
+      .set({ balance: sql`${wallets.balance} - ${matchAmount * executionPrice}` })
+      .where(eq(wallets.id, buyerQuoteWallet.id));
+
+    await db
+      .update(wallets)
+      .set({ balance: sql`${wallets.balance} + ${matchAmount * executionPrice}` })
+      .where(eq(wallets.id, sellerQuoteWallet.id));
+
+    const newOrderFilled = parseFloat(newOrder.filled) + matchAmount;
+    const opposingOrderFilled = parseFloat(opposingOrder.filled) + matchAmount;
+
+    await db
+      .update(orders)
+      .set({
+        filled: newOrderFilled.toString(),
+        status: newOrderFilled >= parseFloat(newOrder.amount) ? "completed" : "partial"
+      })
+      .where(eq(orders.id, newOrder.id));
+
+    await db
+      .update(orders)
+      .set({
+        filled: opposingOrderFilled.toString(),
+        status: opposingOrderFilled >= parseFloat(opposingOrder.amount) ? "completed" : "partial"
+      })
+      .where(eq(orders.id, opposingOrder.id));
+
+    remainingAmount -= matchAmount;
+  }
+}
 
 export function registerRoutes(app: Express) {
   app.post("/api/auth/signup", async (req, res) => {
@@ -33,9 +193,9 @@ export function registerRoutes(app: Express) {
         .returning();
 
       const initialWallets = [
-        { userId: user.id, currency: "BTC", balance: "0", address: `1${Math.random().toString(36).substring(2, 15)}` },
-        { userId: user.id, currency: "ETH", balance: "0", address: `0x${Math.random().toString(36).substring(2, 15)}` },
-        { userId: user.id, currency: "USDT", balance: "10000", address: `T${Math.random().toString(36).substring(2, 15)}` },
+        { userId: user.id, currency: "BTC", balance: "0", address: `1${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}` },
+        { userId: user.id, currency: "ETH", balance: "0", address: `0x${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}` },
+        { userId: user.id, currency: "USDT", balance: "10000", address: `T${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}` },
       ];
 
       await db.insert(wallets).values(initialWallets);
@@ -103,70 +263,65 @@ export function registerRoutes(app: Express) {
   });
 
   app.get("/api/markets", async (_req, res) => {
-    const mockMarkets = [
+    const markets = [
       { 
         symbol: "BTC/USDT", 
         name: "Bitcoin", 
-        price: 42156.84, 
-        change24h: 5.24, 
-        volume24h: 28500000000, 
-        marketCap: 825000000000 
+        ...priceCache["BTC/USDT"]
       },
       { 
         symbol: "ETH/USDT", 
         name: "Ethereum", 
-        price: 2235.67, 
-        change24h: -2.15, 
-        volume24h: 15200000000, 
-        marketCap: 268000000000 
+        ...priceCache["ETH/USDT"]
       },
       { 
         symbol: "BNB/USDT", 
         name: "Binance Coin", 
-        price: 315.42, 
-        change24h: 3.87, 
-        volume24h: 1800000000, 
-        marketCap: 48500000000 
+        ...priceCache["BNB/USDT"]
       },
       { 
         symbol: "SOL/USDT", 
         name: "Solana", 
-        price: 98.23, 
-        change24h: 8.45, 
-        volume24h: 2100000000, 
-        marketCap: 42000000000 
+        ...priceCache["SOL/USDT"]
       },
     ];
 
-    res.json(mockMarkets);
+    res.json(markets);
   });
 
   app.get("/api/markets/price/:pair", async (req, res) => {
     const { pair } = req.params;
-    
-    const prices: Record<string, { price: number; change24h: number }> = {
-      "BTC/USDT": { price: 42156.84, change24h: 5.24 },
-      "ETH/USDT": { price: 2235.67, change24h: -2.15 },
-      "BNB/USDT": { price: 315.42, change24h: 3.87 },
-      "SOL/USDT": { price: 98.23, change24h: 8.45 },
-    };
-
-    res.json(prices[pair] || { price: 42156.84, change24h: 5.24 });
+    res.json(priceCache[pair] || priceCache["BTC/USDT"]);
   });
 
   app.get("/api/markets/orderbook/:pair", async (req, res) => {
-    const mockOrderBook = {
-      bids: Array.from({ length: 15 }, (_, i) => ({
-        price: 42100 - i * 10,
-        amount: Math.random() * 2,
-      })),
-      asks: Array.from({ length: 15 }, (_, i) => ({
-        price: 42200 + i * 10,
-        amount: Math.random() * 2,
-      })),
-    };
+    const { pair } = req.params;
+    
+    const buyOrders = await db
+      .select()
+      .from(orders)
+      .where(and(eq(orders.pair, pair), eq(orders.side, "buy"), eq(orders.status, "pending")))
+      .orderBy(sql`CAST(${orders.price} AS DECIMAL) DESC`)
+      .limit(15);
 
-    res.json(mockOrderBook);
+    const sellOrders = await db
+      .select()
+      .from(orders)
+      .where(and(eq(orders.pair, pair), eq(orders.side, "sell"), eq(orders.status, "pending")))
+      .orderBy(sql`CAST(${orders.price} AS DECIMAL) ASC`)
+      .limit(15);
+
+    const bids = buyOrders.map(o => ({
+      price: parseFloat(o.price || "0"),
+      amount: parseFloat(o.amount) - parseFloat(o.filled)
+    }));
+
+    const asks = sellOrders.map(o => ({
+      price: parseFloat(o.price || "0"),
+      amount: parseFloat(o.amount) - parseFloat(o.filled)
+    }));
+
+    res.json({ bids, asks });
   });
 
   app.get("/api/orders", requireAuth, async (req: AuthRequest, res) => {
@@ -183,6 +338,9 @@ export function registerRoutes(app: Express) {
     try {
       const data = insertOrderSchema.parse(req.body);
       
+      const currentPrice = priceCache[data.pair]?.price || 42156.84;
+      const orderPrice = data.type === "market" ? currentPrice : parseFloat(data.price || "0");
+
       const [quoteCurrencyWallet] = await db
         .select()
         .from(wallets)
@@ -206,9 +364,7 @@ export function registerRoutes(app: Express) {
         .limit(1);
 
       if (data.side === "buy") {
-        const requiredAmount = data.type === "market" 
-          ? parseFloat(data.amount) * 42156.84
-          : parseFloat(data.amount) * parseFloat(data.price || "0");
+        const requiredAmount = parseFloat(data.amount) * orderPrice;
         
         if (parseFloat(quoteCurrencyWallet.balance) < requiredAmount) {
           return res.status(400).json({ message: "Insufficient balance" });
@@ -224,49 +380,19 @@ export function registerRoutes(app: Express) {
         .values({
           ...data,
           userId: req.session.userId!,
+          price: orderPrice.toString(),
         })
         .returning();
 
-      if (data.type === "market") {
-        const executionPrice = 42156.84;
-        
-        if (data.side === "buy") {
-          await db
-            .update(wallets)
-            .set({ 
-              balance: sql`${wallets.balance} - ${parseFloat(data.amount) * executionPrice}` 
-            })
-            .where(eq(wallets.id, quoteCurrencyWallet.id));
-          
-          await db
-            .update(wallets)
-            .set({ 
-              balance: sql`${wallets.balance} + ${parseFloat(data.amount)}` 
-            })
-            .where(eq(wallets.id, baseCurrencyWallet.id));
-        } else {
-          await db
-            .update(wallets)
-            .set({ 
-              balance: sql`${wallets.balance} - ${parseFloat(data.amount)}` 
-            })
-            .where(eq(wallets.id, baseCurrencyWallet.id));
-          
-          await db
-            .update(wallets)
-            .set({ 
-              balance: sql`${wallets.balance} + ${parseFloat(data.amount) * executionPrice}` 
-            })
-            .where(eq(wallets.id, quoteCurrencyWallet.id));
-        }
+      await matchOrders(order);
 
-        await db
-          .update(orders)
-          .set({ status: "completed", filled: data.amount })
-          .where(eq(orders.id, order.id));
-      }
+      const [updatedOrder] = await db
+        .select()
+        .from(orders)
+        .where(eq(orders.id, order.id))
+        .limit(1);
 
-      res.json(order);
+      res.json(updatedOrder);
     } catch (error: any) {
       res.status(400).json({ message: error.message });
     }
@@ -311,13 +437,17 @@ export function registerRoutes(app: Express) {
     try {
       const data = insertTransactionSchema.parse(req.body);
       
+      if (parseFloat(data.amount) < 0.001) {
+        return res.status(400).json({ message: `Minimum deposit is 0.001 ${data.currency}` });
+      }
+
       const [transaction] = await db
         .insert(transactions)
         .values({
           ...data,
           userId: req.session.userId!,
           type: "deposit",
-          txHash: `0x${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}`,
+          txHash: `0x${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}`,
         })
         .returning();
 
@@ -348,6 +478,10 @@ export function registerRoutes(app: Express) {
     try {
       const data = insertTransactionSchema.parse(req.body);
       
+      if (parseFloat(data.amount) < 0.001) {
+        return res.status(400).json({ message: `Minimum withdrawal is 0.001 ${data.currency}` });
+      }
+
       const [wallet] = await db
         .select()
         .from(wallets)
@@ -359,8 +493,10 @@ export function registerRoutes(app: Express) {
         )
         .limit(1);
 
-      if (parseFloat(wallet.balance) < parseFloat(data.amount)) {
-        return res.status(400).json({ message: "Insufficient balance" });
+      const totalAmount = parseFloat(data.amount) + 0.0001;
+      
+      if (parseFloat(wallet.balance) < totalAmount) {
+        return res.status(400).json({ message: "Insufficient balance (including network fee)" });
       }
 
       const [transaction] = await db
@@ -369,14 +505,14 @@ export function registerRoutes(app: Express) {
           ...data,
           userId: req.session.userId!,
           type: "withdrawal",
-          txHash: `0x${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}`,
+          txHash: `0x${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}`,
         })
         .returning();
 
       await db
         .update(wallets)
         .set({ 
-          balance: sql`${wallets.balance} - ${parseFloat(data.amount)}` 
+          balance: sql`${wallets.balance} - ${totalAmount}` 
         })
         .where(eq(wallets.id, wallet.id));
 

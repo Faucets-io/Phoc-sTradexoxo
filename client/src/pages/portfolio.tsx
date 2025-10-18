@@ -9,13 +9,23 @@ export default function Portfolio() {
     queryKey: ["/api/wallets"],
   });
 
+  const { data: markets } = useQuery<any[]>({
+    queryKey: ["/api/markets"],
+  });
+
   const formatBalance = (balance: string) => {
     const num = parseFloat(balance);
     return num.toFixed(8);
   };
 
+  const getPrice = (currency: string) => {
+    if (currency === "USDT") return 1;
+    const market = markets?.find(m => m.symbol === `${currency}/USDT`);
+    return market?.price || 0;
+  };
+
   const totalValue = wallets?.reduce((sum, wallet) => {
-    return sum + parseFloat(wallet.balance) * 50000;
+    return sum + parseFloat(wallet.balance) * getPrice(wallet.currency);
   }, 0) || 0;
 
   return (
@@ -100,7 +110,7 @@ export default function Portfolio() {
                           {formatBalance(wallet.balance)} {wallet.currency}
                         </p>
                         <p className="text-sm text-muted-foreground mt-1">
-                          ≈ ${(parseFloat(wallet.balance) * 50000).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          ≈ ${(parseFloat(wallet.balance) * getPrice(wallet.currency)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </p>
                       </div>
                     </div>
