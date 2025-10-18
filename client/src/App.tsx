@@ -1,10 +1,9 @@
-import { Switch, Route } from "wouter";
+import { Route, Switch } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
-import NotFound from "@/pages/not-found";
 import Landing from "@/pages/landing";
 import Login from "@/pages/login";
 import Signup from "@/pages/signup";
@@ -14,6 +13,8 @@ import Trade from "@/pages/trade";
 import Transactions from "@/pages/transactions";
 import Deposit from "@/pages/deposit";
 import Withdraw from "@/pages/withdraw";
+import TradingHistory from "@/pages/trading-history";
+import NotFound from "@/pages/not-found";
 
 function Router() {
   return (
@@ -27,6 +28,7 @@ function Router() {
       <Route path="/transactions" component={Transactions} />
       <Route path="/deposit" component={Deposit} />
       <Route path="/withdraw" component={Withdraw} />
+      <Route path="/history" component={TradingHistory} />
       <Route component={NotFound} />
     </Switch>
   );

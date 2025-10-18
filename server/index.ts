@@ -1,7 +1,9 @@
 import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
-import { registerRoutes } from "./routes";
+import { registerRoutes, setupWebSocket } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { storage } from "./storage";
+import { WebSocketServer } from "ws";
 
 const app = express();
 app.use(express.json());
@@ -52,7 +54,7 @@ app.use((req, res, next) => {
 
 (async () => {
   registerRoutes(app);
-  
+
   const server = (await import("http")).createServer(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
@@ -77,11 +79,16 @@ app.use((req, res, next) => {
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
   const port = parseInt(process.env.PORT || '5000', 10);
-  server.listen({
+  const serverInstance = server.listen({
     port,
     host: "0.0.0.0",
     reusePort: true,
   }, () => {
     log(`serving on port ${port}`);
   });
+
+  // WebSocket server for real-time updates
+  const wss = new WebSocketServer({ port: 5001, host: "0.0.0.0" });
+  setupWebSocket(wss);
+  log(`WebSocket server running at ws://0.0.0.0:5001`);
 })();

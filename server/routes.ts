@@ -6,6 +6,7 @@ import { eq, and, or, desc, sql } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { insertUserSchema, loginSchema, insertOrderSchema, insertTransactionSchema } from "@shared/schema";
 import { requireAuth, type AuthRequest } from "./auth";
+import { WebSocketServer, WebSocket } from "ws";
 
 // Simple in-memory cache for crypto prices
 let priceCache: Record<string, { price: number; change24h: number; volume24h: number; marketCap: number; lastUpdated: number }> = {};
@@ -50,9 +51,44 @@ async function fetchCryptoPrices() {
   }
 }
 
-// Update prices every 60 seconds
-setInterval(fetchCryptoPrices, 60000);
+// Update prices every 30 seconds
+setInterval(fetchCryptoPrices, 30000);
 fetchCryptoPrices(); // Initial fetch
+
+// WebSocket clients for real-time updates
+const wsClients = new Set<WebSocket>();
+
+export function broadcastPriceUpdate() {
+  const markets = [
+    { symbol: "BTC/USDT", name: "Bitcoin", ...priceCache["BTC/USDT"] },
+    { symbol: "ETH/USDT", name: "Ethereum", ...priceCache["ETH/USDT"] },
+    { symbol: "BNB/USDT", name: "Binance Coin", ...priceCache["BNB/USDT"] },
+    { symbol: "SOL/USDT", name: "Solana", ...priceCache["SOL/USDT"] },
+  ];
+  
+  const message = JSON.stringify({ type: 'priceUpdate', data: markets });
+  wsClients.forEach(client => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(message);
+    }
+  });
+}
+
+export function setupWebSocket(wss: WebSocketServer) {
+  wss.on('connection', (ws) => {
+    wsClients.add(ws);
+    
+    // Send initial price data
+    broadcastPriceUpdate();
+    
+    ws.on('close', () => {
+      wsClients.delete(ws);
+    });
+  });
+  
+  // Broadcast updates every 5 seconds
+  setInterval(broadcastPriceUpdate, 5000);
+}
 
 async function matchOrders(newOrder: any) {
   const opposingSide = newOrder.side === "buy" ? "sell" : "buy";
@@ -332,6 +368,69 @@ export function registerRoutes(app: Express) {
       .orderBy(desc(orders.createdAt));
 
     res.json(userOrders);
+  });
+
+  app.get("/api/trades/history", requireAuth, async (req: AuthRequest, res) => {
+    const userTrades = await db
+      .select({
+        id: trades.id,
+        pair: trades.pair,
+        amount: trades.amount,
+        price: trades.price,
+        createdAt: trades.createdAt,
+        side: sql<string>`CASE 
+          WHEN ${trades.buyOrderId} IN (SELECT id FROM ${orders} WHERE ${orders.userId} = ${req.session.userId!}) 
+          THEN 'buy' 
+          ELSE 'sell' 
+        END`,
+      })
+      .from(trades)
+      .innerJoin(orders, or(eq(trades.buyOrderId, orders.id), eq(trades.sellOrderId, orders.id)))
+      .where(eq(orders.userId, req.session.userId!))
+      .orderBy(desc(trades.createdAt))
+      .limit(100);
+
+    res.json(userTrades);
+  });
+
+  app.get("/api/portfolio/performance", requireAuth, async (req: AuthRequest, res) => {
+    const userWallets = await db
+      .select()
+      .from(wallets)
+      .where(eq(wallets.userId, req.session.userId!));
+
+    let totalValue = 0;
+    const breakdown: any[] = [];
+
+    for (const wallet of userWallets) {
+      const currentPrice = wallet.currency === "USDT" ? 1 : (priceCache[`${wallet.currency}/USDT`]?.price || 0);
+      const value = parseFloat(wallet.balance) * currentPrice;
+      totalValue += value;
+      
+      breakdown.push({
+        currency: wallet.currency,
+        balance: wallet.balance,
+        value,
+        percentage: 0, // Will calculate after total
+      });
+    }
+
+    breakdown.forEach(item => {
+      item.percentage = totalValue > 0 ? (item.value / totalValue) * 100 : 0;
+    });
+
+    const userTrades = await db
+      .select()
+      .from(trades)
+      .innerJoin(orders, or(eq(trades.buyOrderId, orders.id), eq(trades.sellOrderId, orders.id)))
+      .where(eq(orders.userId, req.session.userId!))
+      .orderBy(desc(trades.createdAt));
+
+    res.json({
+      totalValue,
+      breakdown,
+      tradesCount: userTrades.length,
+    });
   });
 
   app.post("/api/orders", requireAuth, async (req: AuthRequest, res) => {

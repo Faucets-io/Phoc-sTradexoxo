@@ -5,6 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
+import { useWebSocket } from "@/hooks/use-websocket";
+import { useEffect, useState } from "react";
 
 interface CryptoPrice {
   symbol: string;
@@ -16,9 +18,24 @@ interface CryptoPrice {
 }
 
 export default function Dashboard() {
-  const { data: markets, isLoading } = useQuery<CryptoPrice[]>({
+  const { data: initialMarkets, isLoading } = useQuery<CryptoPrice[]>({
     queryKey: ["/api/markets"],
   });
+  
+  const [markets, setMarkets] = useState<CryptoPrice[]>([]);
+  const { lastMessage, isConnected } = useWebSocket();
+
+  useEffect(() => {
+    if (initialMarkets) {
+      setMarkets(initialMarkets);
+    }
+  }, [initialMarkets]);
+
+  useEffect(() => {
+    if (lastMessage?.type === 'priceUpdate' && lastMessage.data) {
+      setMarkets(lastMessage.data);
+    }
+  }, [lastMessage]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
