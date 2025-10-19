@@ -1,0 +1,176 @@
+
+🚀 Crypto Trading Web App Redesign Prompt — ZYTE-Style Professional UI
+
+Objective
+
+Rebuild the crypto trading web application to look and function similar to ZYTE (zytece.com) — clean, modern, and mobile-first — with responsive layouts and smooth user flow for all trading functions.
+
+The current design should be replaced with a visually refined, responsive, and production-ready interface inspired by ZYTE’s style and structure.
+
+🎨 Design Style & Visual Identity
+	•	Overall Look: Minimalist, elegant, and data-focused.
+	•	Color Palette:
+	•	Primary: #FBC02D (Bright Yellow)
+	•	Buy/Positive: Green (#00C853)
+	•	Sell/Negative: Red (#D32F2F)
+	•	Background: White / Light Gray
+	•	Text: Dark Gray / Black (#212121)
+	•	Font: Modern sans-serif — Poppins, Inter, or Roboto.
+	•	Button Style: Rounded corners (border-radius: 12–20px), soft drop shadows, and hover feedback.
+	•	Layout: Compact cards with subtle shadows; clean spacing and alignment.
+	•	Icons: Minimal line icons (Lucide, Feather, or Material Icons).
+	•	Animations: Smooth transitions (tab changes, button clicks, etc.); no harsh effects.
+
+🏠 Home Page (Dashboard)
+
+Top Section
+	•	Header bar with logo (center) and small icons for notifications and support.
+	•	Card showing Total Assets (USDT) with balance display (large, bold font).
+	•	Right-aligned yellow “Assets” button.
+
+Promotional Banner
+	•	Large banner card: “BUY / SELL CRYPTO ANYTIME ANYWHERE – PEOPLE’S EXCHANGE”.
+(Can use vector illustration similar to ZYTE’s crypto graphic.)
+
+News Ticker
+	•	Horizontal scrolling text bar for quick announcements (e.g., “U.S. banks come together to mint USDF stablecoins”).
+
+Main Feature Grid
+Four rectangular cards in a 2x2 grid:
+	•	Second
+	•	Contracts
+	•	Assets
+	•	Deposit
+Each with icons and short labels.
+
+Support Section
+Two smaller cards below:
+	•	Livechat (Need help?)
+	•	Download App (Trade freely anytime, anywhere)
+
+Market Overview Table
+Simple 3-row section:
+
+Pair	Price	% Change
+BTC/USDT	108857.91	+1.56%
+ETH/USDT	4005.60	+3.02%
+XRP/USDT	2.3956	+1.42%
+
+Bottom Navigation Bar (Fixed)
+
+Icon	Label
+Home	Market
+
+	•	Highlight active tab with yellow accent and filled icon.
+
+💹 Trade Page
+
+Tabs across top: Exchange, Second, Contracts
+
+Exchange Tab
+
+Layout (Two-Column):
+	•	Left Panel: Trade form
+	•	Right Panel: Live order book
+
+Trade Form
+	•	Pair selector (e.g., XRP/USDT)
+	•	Buy/Sell toggle (Green = Buy, Red = Sell)
+	•	Transaction Mode: Dropdown (Market / Limit / Stop-Limit)
+	•	Price Field: “Market Optimal Price” placeholder (if Market mode).
+	•	Amount Field: Input for trade quantity.
+	•	Quick Select Buttons: 25%, 50%, 75%, 100%.
+	•	Balance Display: “Usable: 0.00 USDT”.
+	•	Buy Button: Large green button with full width.
+
+Order Book
+	•	Live-updating table:
+	•	Sell Orders (Red) on top
+	•	Buy Orders (Green) below
+	•	Columns: Price | Quantity
+	•	Display most recent market price (large green font).
+
+Below Order Form
+Tabs:
+	•	Current Entrust: Active orders list
+	•	History Entrust: Past trades
+	•	Empty state: “No Data Yet!” with simple illustration.
+
+Second Tab
+	•	Similar structure but optimized for quick, short-term trades.
+	•	Pair Display: XRP/USDT with current price at top right.
+	•	Transaction Mode: Dropdown (default: USDT).
+	•	Opening Quantity Input.
+	•	Open Time Buttons: 60s / 120s / 180s / 300s / 500s / 720s / 900s.
+(Each should highlight when selected.)
+	•	Profit Rate: Example “87.00%”.
+	•	Usable Balance: Display available USDT.
+	•	Buy (Green) and Sell (Red) buttons side by side.
+	•	Tabs: Open Orders / Order History.
+
+👤 User Center Page
+	•	Profile section: username, email, verification level.
+	•	Buttons for:
+	•	Deposit
+	•	Withdraw
+	•	Transaction History
+	•	Account Settings
+	•	Logout
+	•	Clean, card-style layout.
+
+📊 Market Page
+	•	List all trading pairs with:
+	•	Pair (BTC/USDT)
+	•	Current Price
+	•	24h % Change (green/red)
+	•	Search Bar at top for filtering pairs.
+	•	Sort options (by volume, top gainers/losers).
+
+🌱 Grow Page
+
+Placeholder for staking, yield farming, or investment products.
+Use simple card layout with icons and short text (e.g., “Earn with Crypto” or “Coming Soon”).
+
+⚙️ Technical Implementation
+	•	Frontend: React (Next.js) + Tailwind CSS
+	•	State Management: Redux Toolkit or Zustand
+	•	Real-Time Updates: WebSockets for price/order book
+	•	Backend API Integration: For market data, balances, and orders
+	•	Responsiveness: Must scale smoothly between mobile and desktop
+	•	Security: HTTPS, JWT session handling, CSRF protection
+	•	Dark Mode (optional): Toggle switch
+
+🧩 UI Components Wireframe Reference (Text Layout)
+
+[Header: Logo | Notification | Support]
+---------------------------------------
+[Total Assets: USDT Balance] [Assets Button]
+---------------------------------------
+[Promo Banner: Buy/Sell Crypto Anytime Anywhere]
+---------------------------------------
+[News Ticker Scroller]
+---------------------------------------
+[Feature Grid]
+[Second] [Contracts]
+[Assets] [Deposit]
+---------------------------------------
+[Support Boxes]
+[Livechat] [Download App]
+---------------------------------------
+[Market List Table]
+---------------------------------------
+[Bottom Navigation Bar]
+Home | Market | Trade | Grow | User Center
+
+✅ Expected Outcome
+	•	Clean, fast, and visually balanced UI
+	•	Responsive across all devices
+	•	Market data updates live
+	•	Consistent professional color scheme
+	•	Smooth tab navigation and transitions
+	•	Layout and spacing similar to ZYTE’s interface
+
+🧭 Deliverables
+	1.	Fully functional frontend rebuild following this layout.
+	2.	Integrated order book and market data mock API (ready for live data later).
+	3.	Deployed version for testing and feedback before backend hookup.
