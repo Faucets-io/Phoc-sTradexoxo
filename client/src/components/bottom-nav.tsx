@@ -1,4 +1,4 @@
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { Home, TrendingUp, BarChart3, TrendingDown, User } from "lucide-react";
 
 export function BottomNav() {
@@ -43,7 +43,7 @@ export function BottomNav() {
         {navItems.map(({ path, icon: Icon, label, testId }) => {
           const isActive = location === path;
           return (
-            <a
+            <Link
               key={path}
               href={path}
               data-testid={testId}
@@ -55,7 +55,7 @@ export function BottomNav() {
             >
               <Icon className={`h-5 w-5 ${isActive ? "fill-primary" : ""}`} />
               <span className="text-xs font-medium">{label}</span>
-            </a>
+            </Link>
           );
         })}
       </div>
