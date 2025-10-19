@@ -8,8 +8,11 @@ import Landing from "@/pages/landing";
 import Login from "@/pages/login";
 import Signup from "@/pages/signup";
 import Dashboard from "@/pages/dashboard";
+import Market from "@/pages/market";
 import Portfolio from "@/pages/portfolio";
 import Trade from "@/pages/trade";
+import Grow from "@/pages/grow";
+import UserCenter from "@/pages/user";
 import Transactions from "@/pages/transactions";
 import Deposit from "@/pages/deposit";
 import Withdraw from "@/pages/withdraw";
@@ -23,8 +26,11 @@ function Router() {
       <Route path="/login" component={Login} />
       <Route path="/signup" component={Signup} />
       <Route path="/dashboard" component={Dashboard} />
+      <Route path="/market" component={Market} />
       <Route path="/portfolio" component={Portfolio} />
       <Route path="/trade" component={Trade} />
+      <Route path="/grow" component={Grow} />
+      <Route path="/user" component={UserCenter} />
       <Route path="/transactions" component={Transactions} />
       <Route path="/deposit" component={Deposit} />
       <Route path="/withdraw" component={Withdraw} />
@@ -37,7 +43,7 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider defaultTheme="dark">
+      <ThemeProvider defaultTheme="light">
         <TooltipProvider>
           <Toaster />
           <Router />
