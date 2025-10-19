@@ -1,21 +1,25 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { BottomNav } from "@/components/bottom-nav";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { 
+  Wallet, 
   ArrowDownToLine, 
   ArrowUpFromLine, 
-  History, 
-  Settings, 
-  LogOut,
-  Shield,
-  Bell
+  ArrowRightLeft,
+  FileText,
+  Award,
+  Settings,
+  Gift,
+  HelpCircle,
+  MessageCircle,
+  MessageSquare,
+  LogOut
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import type { User } from "@shared/schema";
+import type { User, Wallet as WalletType } from "@shared/schema";
 
 export default function UserCenter() {
   const [, setLocation] = useLocation();
@@ -23,6 +27,10 @@ export default function UserCenter() {
 
   const { data: user } = useQuery<User>({
     queryKey: ["/api/auth/me"],
+  });
+
+  const { data: wallets } = useQuery<WalletType[]>({
+    queryKey: ["/api/wallets"],
   });
 
   const logoutMutation = useMutation({
@@ -45,130 +53,190 @@ export default function UserCenter() {
     return username.slice(0, 2).toUpperCase();
   };
 
+  const totalBalance = wallets?.reduce((sum, wallet) => {
+    return sum + parseFloat(wallet.balance);
+  }, 0) || 0;
+
   return (
     <div className="min-h-screen bg-background pb-20 lg:pb-0">
-      <header className="sticky top-0 z-40 bg-card border-b border-border p-4">
-        <div className="max-w-4xl mx-auto">
-          <h1 className="text-2xl font-bold" data-testid="text-user-title">User Center</h1>
-        </div>
-      </header>
-
       <main className="max-w-4xl mx-auto p-4 space-y-6">
+        {/* Profile Section */}
         {user && (
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <Avatar className="h-16 w-16">
-                  <AvatarFallback className="bg-primary text-primary-foreground text-xl font-semibold">
-                    {getInitials(user.username)}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1">
-                  <h2 className="text-xl font-semibold" data-testid="text-username">
-                    {user.username}
-                  </h2>
-                  <p className="text-sm text-muted-foreground" data-testid="text-email">
-                    {user.email}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-success/10 text-success">
-                  <Shield className="h-4 w-4" />
-                  <span className="text-xs font-medium">Verified</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="flex items-center gap-3 pt-2">
+            <Avatar className="h-14 w-14 bg-primary">
+              <AvatarFallback className="bg-primary text-primary-foreground text-lg font-semibold">
+                {getInitials(user.username)}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1">
+              <h2 className="text-base font-semibold" data-testid="text-username">
+                {user.email || user.username}
+              </h2>
+              <p className="text-sm text-muted-foreground" data-testid="text-user-id">
+                ID:{user.id.substring(0, 6)}
+              </p>
+            </div>
+          </div>
         )}
 
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Button
-            variant="outline"
-            className="h-auto p-4 justify-start"
-            onClick={() => setLocation("/deposit")}
-            data-testid="button-deposit"
-          >
-            <div className="flex items-center gap-3 w-full">
-              <div className="h-10 w-10 rounded-lg bg-success/10 flex items-center justify-center">
-                <ArrowDownToLine className="h-5 w-5 text-success" />
+        {/* Total Assets Card */}
+        <div className="bg-primary rounded-lg p-6 relative overflow-hidden">
+          <div className="relative z-10">
+            <p className="text-primary-foreground/90 text-sm mb-1">Total Assets≈</p>
+            <div className="flex items-end justify-between">
+              <div>
+                <span className="text-primary-foreground text-4xl font-bold" data-testid="text-total-balance">
+                  {totalBalance.toFixed(2)}
+                </span>
+                <span className="text-primary-foreground/90 text-lg ml-2">USDT</span>
               </div>
-              <div className="text-left">
-                <div className="font-semibold">Deposit</div>
-                <div className="text-xs text-muted-foreground">Add funds to your account</div>
-              </div>
+              <Button 
+                variant="secondary" 
+                size="sm"
+                className="bg-white hover:bg-white/90 text-foreground"
+                onClick={() => setLocation("/portfolio")}
+                data-testid="button-assets"
+              >
+                Assets
+              </Button>
             </div>
-          </Button>
-
-          <Button
-            variant="outline"
-            className="h-auto p-4 justify-start"
-            onClick={() => setLocation("/withdraw")}
-            data-testid="button-withdraw"
-          >
-            <div className="flex items-center gap-3 w-full">
-              <div className="h-10 w-10 rounded-lg bg-destructive/10 flex items-center justify-center">
-                <ArrowUpFromLine className="h-5 w-5 text-destructive" />
-              </div>
-              <div className="text-left">
-                <div className="font-semibold">Withdraw</div>
-                <div className="text-xs text-muted-foreground">Send funds to external wallet</div>
-              </div>
-            </div>
-          </Button>
+          </div>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Account Actions</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <Button
-              variant="ghost"
-              className="w-full justify-start h-auto p-3"
-              onClick={() => setLocation("/transactions")}
-              data-testid="button-transactions"
-            >
-              <History className="h-5 w-5 mr-3" />
-              <span>Transaction History</span>
-            </Button>
-
-            <Button
-              variant="ghost"
-              className="w-full justify-start h-auto p-3"
+        {/* Commonly Used Section */}
+        <div className="space-y-4">
+          <h3 className="text-base font-semibold">Commonly Used</h3>
+          <div className="grid grid-cols-4 gap-4">
+            <button
               onClick={() => setLocation("/portfolio")}
-              data-testid="button-portfolio"
+              className="flex flex-col items-center gap-2 p-3"
+              data-testid="button-assets-quick"
             >
-              <ArrowDownToLine className="h-5 w-5 mr-3" />
-              <span>Portfolio</span>
-            </Button>
+              <div className="h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center">
+                <Wallet className="h-7 w-7 text-primary" />
+              </div>
+              <span className="text-xs text-foreground">Assets</span>
+            </button>
 
-            <Button
-              variant="ghost"
-              className="w-full justify-start h-auto p-3"
+            <button
+              onClick={() => setLocation("/deposit")}
+              className="flex flex-col items-center gap-2 p-3"
+              data-testid="button-deposit-quick"
+            >
+              <div className="h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center">
+                <ArrowDownToLine className="h-7 w-7 text-primary" />
+              </div>
+              <span className="text-xs text-foreground">Deposit</span>
+            </button>
+
+            <button
+              onClick={() => setLocation("/withdraw")}
+              className="flex flex-col items-center gap-2 p-3"
+              data-testid="button-withdraw-quick"
+            >
+              <div className="h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center">
+                <ArrowUpFromLine className="h-7 w-7 text-primary" />
+              </div>
+              <span className="text-xs text-foreground">Withdraw</span>
+            </button>
+
+            <button
+              onClick={() => setLocation("/transactions")}
+              className="flex flex-col items-center gap-2 p-3"
+              data-testid="button-transfer-quick"
+            >
+              <div className="h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center">
+                <ArrowRightLeft className="h-7 w-7 text-primary" />
+              </div>
+              <span className="text-xs text-foreground">Transfer</span>
+            </button>
+          </div>
+        </div>
+
+        {/* More Section */}
+        <div className="space-y-4">
+          <h3 className="text-base font-semibold">More</h3>
+          <div className="grid grid-cols-4 gap-4">
+            <button
+              onClick={() => setLocation("/history")}
+              className="flex flex-col items-center gap-2 p-3"
+              data-testid="button-records"
+            >
+              <div className="h-12 w-12 flex items-center justify-center">
+                <FileText className="h-6 w-6 text-primary" />
+              </div>
+              <span className="text-xs text-foreground">Records</span>
+            </button>
+
+            <button
+              className="flex flex-col items-center gap-2 p-3"
+              data-testid="button-certification"
+            >
+              <div className="h-12 w-12 flex items-center justify-center">
+                <Award className="h-6 w-6 text-primary" />
+              </div>
+              <span className="text-xs text-foreground">Certification</span>
+            </button>
+
+            <button
+              className="flex flex-col items-center gap-2 p-3"
               data-testid="button-settings"
             >
-              <Settings className="h-5 w-5 mr-3" />
-              <span>Account Settings</span>
-            </Button>
+              <div className="h-12 w-12 flex items-center justify-center">
+                <Settings className="h-6 w-6 text-primary" />
+              </div>
+              <span className="text-xs text-foreground">Settings</span>
+            </button>
 
-            <Button
-              variant="ghost"
-              className="w-full justify-start h-auto p-3"
-              data-testid="button-notifications"
+            <button
+              className="flex flex-col items-center gap-2 p-3"
+              data-testid="button-referral"
             >
-              <Bell className="h-5 w-5 mr-3" />
-              <span>Notifications</span>
-            </Button>
-          </CardContent>
-        </Card>
+              <div className="h-12 w-12 flex items-center justify-center">
+                <Gift className="h-6 w-6 text-primary" />
+              </div>
+              <span className="text-xs text-foreground">Referral</span>
+            </button>
 
+            <button
+              className="flex flex-col items-center gap-2 p-3"
+              data-testid="button-help"
+            >
+              <div className="h-12 w-12 flex items-center justify-center">
+                <HelpCircle className="h-6 w-6 text-primary" />
+              </div>
+              <span className="text-xs text-foreground">Help</span>
+            </button>
+
+            <button
+              className="flex flex-col items-center gap-2 p-3"
+              data-testid="button-assistant"
+            >
+              <div className="h-12 w-12 flex items-center justify-center">
+                <MessageCircle className="h-6 w-6 text-primary" />
+              </div>
+              <span className="text-xs text-foreground">Assistant</span>
+            </button>
+
+            <button
+              className="flex flex-col items-center gap-2 p-3"
+              data-testid="button-feedback"
+            >
+              <div className="h-12 w-12 flex items-center justify-center">
+                <MessageSquare className="h-6 w-6 text-primary" />
+              </div>
+              <span className="text-xs text-foreground">Feedback</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Logout Button */}
         <Button
-          variant="destructive"
-          className="w-full"
+          className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
           onClick={() => logoutMutation.mutate()}
           disabled={logoutMutation.isPending}
           data-testid="button-logout"
         >
-          <LogOut className="h-5 w-5 mr-2" />
           {logoutMutation.isPending ? "Logging out..." : "Logout"}
         </Button>
       </main>
