@@ -3,10 +3,10 @@ import { useLocation } from "wouter";
 import { BottomNav } from "@/components/bottom-nav";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { 
-  Wallet, 
-  ArrowDownToLine, 
-  ArrowUpFromLine, 
+import {
+  Wallet,
+  ArrowDownToLine,
+  ArrowUpFromLine,
   ArrowRightLeft,
   FileText,
   Award,
@@ -14,12 +14,15 @@ import {
   Gift,
   HelpCircle,
   MessageCircle,
-  MessageSquare,
-  LogOut
+  LogOut,
+  Bell,
+  ChevronRight,
+  Shield
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { User, Wallet as WalletType } from "@shared/schema";
+import { Card, CardContent } from "@/components/ui/card";
 
 export default function UserCenter() {
   const [, setLocation] = useLocation();
@@ -90,8 +93,8 @@ export default function UserCenter() {
                 </span>
                 <span className="text-primary-foreground/90 text-lg ml-2">USDT</span>
               </div>
-              <Button 
-                variant="secondary" 
+              <Button
+                variant="secondary"
                 size="sm"
                 className="bg-white hover:bg-white/90 text-foreground"
                 onClick={() => setLocation("/portfolio")}
@@ -169,7 +172,11 @@ export default function UserCenter() {
             </button>
 
             <button
-              className="flex flex-col items-center gap-2 p-3"
+              onClick={() => {
+                // Navigate to certification
+                console.log("Certification clicked");
+              }}
+              className="flex flex-col items-center gap-2 p-3 hover:bg-accent rounded-lg transition-colors"
               data-testid="button-certification"
             >
               <div className="h-12 w-12 flex items-center justify-center">
@@ -179,7 +186,11 @@ export default function UserCenter() {
             </button>
 
             <button
-              className="flex flex-col items-center gap-2 p-3"
+              onClick={() => {
+                // Navigate to settings
+                console.log("Settings clicked");
+              }}
+              className="flex flex-col items-center gap-2 p-3 hover:bg-accent rounded-lg transition-colors"
               data-testid="button-settings"
             >
               <div className="h-12 w-12 flex items-center justify-center">
@@ -189,7 +200,11 @@ export default function UserCenter() {
             </button>
 
             <button
-              className="flex flex-col items-center gap-2 p-3"
+              onClick={() => {
+                // Navigate to referral program
+                console.log("Referral clicked");
+              }}
+              className="flex flex-col items-center gap-2 p-3 hover:bg-accent rounded-lg transition-colors"
               data-testid="button-referral"
             >
               <div className="h-12 w-12 flex items-center justify-center">
@@ -199,7 +214,11 @@ export default function UserCenter() {
             </button>
 
             <button
-              className="flex flex-col items-center gap-2 p-3"
+              onClick={() => {
+                // Navigate to help center
+                console.log("Help clicked");
+              }}
+              className="flex flex-col items-center gap-2 p-3 hover:bg-accent rounded-lg transition-colors"
               data-testid="button-help"
             >
               <div className="h-12 w-12 flex items-center justify-center">
@@ -209,7 +228,11 @@ export default function UserCenter() {
             </button>
 
             <button
-              className="flex flex-col items-center gap-2 p-3"
+              onClick={() => {
+                // Navigate to AI assistant
+                console.log("Assistant clicked");
+              }}
+              className="flex flex-col items-center gap-2 p-3 hover:bg-accent rounded-lg transition-colors"
               data-testid="button-assistant"
             >
               <div className="h-12 w-12 flex items-center justify-center">
@@ -219,7 +242,11 @@ export default function UserCenter() {
             </button>
 
             <button
-              className="flex flex-col items-center gap-2 p-3"
+              onClick={() => {
+                // Navigate to feedback
+                console.log("Feedback clicked");
+              }}
+              className="flex flex-col items-center gap-2 p-3 hover:bg-accent rounded-lg transition-colors"
               data-testid="button-feedback"
             >
               <div className="h-12 w-12 flex items-center justify-center">
@@ -230,14 +257,60 @@ export default function UserCenter() {
           </div>
         </div>
 
+        {/* Menu Section */}
+        <div className="space-y-1">
+          <Card
+            className="hover:bg-accent/50 transition-colors cursor-pointer"
+            onClick={() => console.log("Notifications clicked")}
+          >
+            <CardContent className="flex items-center justify-between p-4">
+              <div className="flex items-center gap-3">
+                <Bell className="h-5 w-5 text-muted-foreground" />
+                <span className="font-medium">Notifications</span>
+              </div>
+              <ChevronRight className="h-5 w-5 text-muted-foreground" />
+            </CardContent>
+          </Card>
+
+          <Card
+            className="hover:bg-accent/50 transition-colors cursor-pointer"
+            onClick={() => console.log("Settings clicked")}
+          >
+            <CardContent className="flex items-center justify-between p-4">
+              <div className="flex items-center gap-3">
+                <Settings className="h-5 w-5 text-muted-foreground" />
+                <span className="font-medium">Settings</span>
+              </div>
+              <ChevronRight className="h-5 w-5 text-muted-foreground" />
+            </CardContent>
+          </Card>
+
+          <Card
+            className="hover:bg-accent/50 transition-colors cursor-pointer"
+            onClick={() => console.log("Documents clicked")}
+          >
+            <CardContent className="flex items-center justify-between p-4">
+              <div className="flex items-center gap-3">
+                <FileText className="h-5 w-5 text-muted-foreground" />
+                <span className="font-medium">Documents</span>
+              </div>
+              <ChevronRight className="h-5 w-5 text-muted-foreground" />
+            </CardContent>
+          </Card>
+        </div>
+
         {/* Logout Button */}
         <Button
-          className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
-          onClick={() => logoutMutation.mutate()}
-          disabled={logoutMutation.isPending}
-          data-testid="button-logout"
+          variant="outline"
+          className="w-full border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
+          onClick={() => {
+            // Clear auth and redirect to login
+            localStorage.removeItem("token");
+            window.location.href = "/login";
+          }}
         >
-          {logoutMutation.isPending ? "Logging out..." : "Logout"}
+          <LogOut className="h-4 w-4 mr-2" />
+          Logout
         </Button>
       </main>
 
