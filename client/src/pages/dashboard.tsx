@@ -157,7 +157,7 @@ export default function Dashboard() {
             </Button>
           </div>
           <div className="space-y-2">
-            {currentPrices.slice(0, 5).map((market) => (
+            {markets.slice(0, 5).map((market) => (
               <Card 
                 key={market.symbol}
                 className="cursor-pointer hover-elevate"
