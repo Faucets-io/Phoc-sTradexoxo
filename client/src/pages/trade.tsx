@@ -267,15 +267,15 @@ export default function Trade() {
             <div className="flex items-center gap-4 text-xs font-mono">
               <div className="flex items-center gap-1">
                 <span className="text-muted-foreground">24h High:</span>
-                <span className="text-success">${(currentPrice.price * 1.05).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                <span className="text-success">${((currentPrice as any).high24h || currentPrice.price * 1.05).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
               <div className="flex items-center gap-1">
                 <span className="text-muted-foreground">24h Low:</span>
-                <span className="text-destructive">${(currentPrice.price * 0.95).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                <span className="text-destructive">${((currentPrice as any).low24h || currentPrice.price * 0.95).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
               <div className="flex items-center gap-1">
                 <span className="text-muted-foreground">24h Vol:</span>
-                <span>${(Math.random() * 10000000000).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
+                <span>${(currentPrice.volume24h || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
               </div>
             </div>
           )}

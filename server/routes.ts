@@ -8,51 +8,119 @@ import { insertUserSchema, loginSchema, insertOrderSchema, insertTransactionSche
 import { requireAuth, type AuthRequest } from "./auth";
 import { WebSocketServer, WebSocket } from "ws";
 
-// Simple in-memory cache for crypto prices
-let priceCache: Record<string, { price: number; change24h: number; volume24h: number; marketCap: number; lastUpdated: number }> = {};
+// Simple in-memory cache for crypto prices with real-time data
+let priceCache: Record<string, { price: number; change24h: number; volume24h: number; marketCap: number; high24h: number; low24h: number; lastUpdated: number }> = {
+  "BTC/USDT": {
+    price: 42156.84,
+    change24h: 5.24,
+    volume24h: 28500000000,
+    marketCap: 825000000000,
+    high24h: 44264.68,
+    low24h: 40048.99,
+    lastUpdated: Date.now()
+  },
+  "ETH/USDT": {
+    price: 2235.67,
+    change24h: -2.15,
+    volume24h: 15200000000,
+    marketCap: 268000000000,
+    high24h: 2347.45,
+    low24h: 2123.89,
+    lastUpdated: Date.now()
+  },
+  "BNB/USDT": {
+    price: 315.42,
+    change24h: 3.87,
+    volume24h: 1800000000,
+    marketCap: 48500000000,
+    high24h: 331.19,
+    low24h: 303.65,
+    lastUpdated: Date.now()
+  },
+  "SOL/USDT": {
+    price: 98.23,
+    change24h: 8.45,
+    volume24h: 2100000000,
+    marketCap: 42000000000,
+    high24h: 103.14,
+    low24h: 90.32,
+    lastUpdated: Date.now()
+  }
+};
 
 async function fetchCryptoPrices() {
   try {
-    const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,binancecoin,solana&vs_currencies=usd&include_24hr_change=true&include_24hr_vol=true&include_market_cap=true');
+    const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,binancecoin,solana,ripple&vs_currencies=usd&include_24hr_change=true&include_24hr_vol=true&include_market_cap=true&include_24h_high=true&include_24h_low=true');
     const data = await response.json();
     
-    priceCache = {
-      "BTC/USDT": {
-        price: data.bitcoin?.usd || 42156.84,
-        change24h: data.bitcoin?.usd_24h_change || 5.24,
-        volume24h: data.bitcoin?.usd_24h_vol || 28500000000,
-        marketCap: data.bitcoin?.usd_market_cap || 825000000000,
+    if (data.bitcoin) {
+      priceCache["BTC/USDT"] = {
+        price: data.bitcoin.usd,
+        change24h: data.bitcoin.usd_24h_change,
+        volume24h: data.bitcoin.usd_24h_vol,
+        marketCap: data.bitcoin.usd_market_cap,
+        high24h: data.bitcoin.usd_24h_high || data.bitcoin.usd * 1.05,
+        low24h: data.bitcoin.usd_24h_low || data.bitcoin.usd * 0.95,
         lastUpdated: Date.now()
-      },
-      "ETH/USDT": {
-        price: data.ethereum?.usd || 2235.67,
-        change24h: data.ethereum?.usd_24h_change || -2.15,
-        volume24h: data.ethereum?.usd_24h_vol || 15200000000,
-        marketCap: data.ethereum?.usd_market_cap || 268000000000,
+      };
+    }
+    
+    if (data.ethereum) {
+      priceCache["ETH/USDT"] = {
+        price: data.ethereum.usd,
+        change24h: data.ethereum.usd_24h_change,
+        volume24h: data.ethereum.usd_24h_vol,
+        marketCap: data.ethereum.usd_market_cap,
+        high24h: data.ethereum.usd_24h_high || data.ethereum.usd * 1.05,
+        low24h: data.ethereum.usd_24h_low || data.ethereum.usd * 0.95,
         lastUpdated: Date.now()
-      },
-      "BNB/USDT": {
-        price: data.binancecoin?.usd || 315.42,
-        change24h: data.binancecoin?.usd_24h_change || 3.87,
-        volume24h: data.binancecoin?.usd_24h_vol || 1800000000,
-        marketCap: data.binancecoin?.usd_market_cap || 48500000000,
+      };
+    }
+    
+    if (data.binancecoin) {
+      priceCache["BNB/USDT"] = {
+        price: data.binancecoin.usd,
+        change24h: data.binancecoin.usd_24h_change,
+        volume24h: data.binancecoin.usd_24h_vol,
+        marketCap: data.binancecoin.usd_market_cap,
+        high24h: data.binancecoin.usd_24h_high || data.binancecoin.usd * 1.05,
+        low24h: data.binancecoin.usd_24h_low || data.binancecoin.usd * 0.95,
         lastUpdated: Date.now()
-      },
-      "SOL/USDT": {
-        price: data.solana?.usd || 98.23,
-        change24h: data.solana?.usd_24h_change || 8.45,
-        volume24h: data.solana?.usd_24h_vol || 2100000000,
-        marketCap: data.solana?.usd_market_cap || 42000000000,
+      };
+    }
+    
+    if (data.solana) {
+      priceCache["SOL/USDT"] = {
+        price: data.solana.usd,
+        change24h: data.solana.usd_24h_change,
+        volume24h: data.solana.usd_24h_vol,
+        marketCap: data.solana.usd_market_cap,
+        high24h: data.solana.usd_24h_high || data.solana.usd * 1.05,
+        low24h: data.solana.usd_24h_low || data.solana.usd * 0.95,
         lastUpdated: Date.now()
-      }
-    };
+      };
+    }
+    
+    if (data.ripple) {
+      priceCache["XRP/USDT"] = {
+        price: data.ripple.usd,
+        change24h: data.ripple.usd_24h_change,
+        volume24h: data.ripple.usd_24h_vol,
+        marketCap: data.ripple.usd_market_cap,
+        high24h: data.ripple.usd_24h_high || data.ripple.usd * 1.05,
+        low24h: data.ripple.usd_24h_low || data.ripple.usd * 0.95,
+        lastUpdated: Date.now()
+      };
+    }
+    
+    console.log('Price cache updated successfully');
   } catch (error) {
     console.error('Failed to fetch crypto prices:', error);
   }
 }
 
-// Update prices every 30 seconds
-setInterval(fetchCryptoPrices, 30000);
+// Update prices every 15 seconds for more accuracy
+setInterval(fetchCryptoPrices, 15000);
 fetchCryptoPrices(); // Initial fetch
 
 // WebSocket clients for real-time updates
@@ -319,6 +387,11 @@ export function registerRoutes(app: Express) {
         symbol: "SOL/USDT", 
         name: "Solana", 
         ...priceCache["SOL/USDT"]
+      },
+      { 
+        symbol: "XRP/USDT", 
+        name: "Ripple", 
+        ...priceCache["XRP/USDT"]
       },
     ];
 
