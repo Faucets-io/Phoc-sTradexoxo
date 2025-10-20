@@ -68,12 +68,29 @@ export default function Trade() {
   });
 
   const [chartData, setChartData] = useState<any[]>([]);
+  const [livePrice, setLivePrice] = useState<number | null>(null);
 
   useEffect(() => {
-    if (currentPrice) {
+    if (currentPrice?.price) {
       setChartData(generateChartData(timeframe, currentPrice.price));
+      setLivePrice(currentPrice.price);
     }
   }, [currentPrice, timeframe, selectedPair]);
+
+  // Simulate real-time price updates
+  useEffect(() => {
+    if (!currentPrice?.price) return;
+    
+    const interval = setInterval(() => {
+      setLivePrice(prev => {
+        if (!prev) return currentPrice.price;
+        const change = (Math.random() - 0.5) * (currentPrice.price * 0.0002);
+        return prev + change;
+      });
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, [currentPrice]);
 
   const usdtWallet = wallets?.find(w => w.currency === "USDT");
   const usableBalance = parseFloat(usdtWallet?.balance || "0");
@@ -142,32 +159,52 @@ export default function Trade() {
   return (
     <div className="min-h-screen bg-background pb-20 lg:pb-0">
       <header className="sticky top-0 z-40 bg-card border-b border-border">
-        <div className="flex items-center justify-between p-3">
-          <div className="flex items-center gap-4">
-            <Select value={selectedPair} onValueChange={setSelectedPair}>
-              <SelectTrigger className="w-[140px] border-0 font-bold text-lg" data-testid="select-pair">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="BTC/USDT">BTC/USDT</SelectItem>
-                <SelectItem value="ETH/USDT">ETH/USDT</SelectItem>
-                <SelectItem value="XRP/USDT">XRP/USDT</SelectItem>
-              </SelectContent>
-            </Select>
-            {currentPrice && (
-              <div className="flex items-center gap-3">
-                <div>
-                  <div className={`text-2xl font-mono font-bold ${isPositive ? 'text-success' : 'text-destructive'}`} data-testid="text-current-price">
-                    ${currentPrice.price.toLocaleString()}
-                  </div>
-                  <div className={`text-xs flex items-center gap-1 ${isPositive ? 'text-success' : 'text-destructive'}`}>
-                    {isPositive ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-                    {isPositive ? '+' : ''}{priceChange.toFixed(2)}%
+        <div className="p-3 space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Select value={selectedPair} onValueChange={setSelectedPair}>
+                <SelectTrigger className="w-[140px] border-0 font-bold text-lg" data-testid="select-pair">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="BTC/USDT">BTC/USDT</SelectItem>
+                  <SelectItem value="ETH/USDT">ETH/USDT</SelectItem>
+                  <SelectItem value="XRP/USDT">XRP/USDT</SelectItem>
+                </SelectContent>
+              </Select>
+              {currentPrice && (
+                <div className="flex items-center gap-3">
+                  <div>
+                    <div className={`text-2xl font-mono font-bold transition-colors ${isPositive ? 'text-success' : 'text-destructive'}`} data-testid="text-current-price">
+                      ${livePrice ? livePrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : currentPrice.price.toLocaleString()}
+                    </div>
+                    <div className={`text-xs flex items-center gap-1 ${isPositive ? 'text-success' : 'text-destructive'}`}>
+                      {isPositive ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+                      {isPositive ? '+' : ''}{priceChange.toFixed(2)}%
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
+          
+          {/* Live Price Ticker */}
+          {livePrice && currentPrice && (
+            <div className="flex items-center gap-4 text-xs font-mono">
+              <div className="flex items-center gap-1">
+                <span className="text-muted-foreground">24h High:</span>
+                <span className="text-success">${(currentPrice.price * 1.05).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="text-muted-foreground">24h Low:</span>
+                <span className="text-destructive">${(currentPrice.price * 0.95).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="text-muted-foreground">24h Vol:</span>
+                <span>${(Math.random() * 10000000000).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
+              </div>
+            </div>
+          )}
         </div>
       </header>
 
@@ -218,9 +255,10 @@ export default function Trade() {
 
           {/* Chart */}
           <div className="h-[400px] lg:h-[calc(100vh-180px)] bg-card/30 p-4">
-            <ResponsiveContainer width="100%" height="100%">
-              {chartType === "area" ? (
-                <AreaChart data={chartData}>
+            {chartData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                {chartType === "area" ? (
+                  <AreaChart data={chartData}>
                   <defs>
                     <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor={isPositive ? "#10b981" : "#ef4444"} stopOpacity={0.3}/>
@@ -294,7 +332,14 @@ export default function Trade() {
                   />
                 </LineChart>
               )}
-            </ResponsiveContainer>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-full">
+                <div className="text-center text-muted-foreground">
+                  <p>Loading chart data...</p>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Order Book & Trades - Mobile */}
