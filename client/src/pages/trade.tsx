@@ -12,22 +12,25 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Order, Wallet } from "@shared/schema";
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { TrendingUp, TrendingDown, Maximize2, Settings } from "lucide-react";
+import { TrendingUp, TrendingDown, Maximize2, Settings, MessageSquare, BookOpen } from "lucide-react";
 
 // Generate realistic candlestick data
 const generateChartData = (timeframe: string, currentPrice: number) => {
   const points = timeframe === "1m" ? 60 : timeframe === "5m" ? 72 : timeframe === "15m" ? 96 : timeframe === "1h" ? 168 : 240;
   const data = [];
-  let price = currentPrice * 0.95;
+  let price = currentPrice * 0.98;
   
   for (let i = 0; i < points; i++) {
-    const change = (Math.random() - 0.48) * (currentPrice * 0.002);
-    price = Math.max(price + change, currentPrice * 0.9);
-    price = Math.min(price, currentPrice * 1.1);
+    const change = (Math.random() - 0.5) * (currentPrice * 0.01);
+    price = price + change;
+    price = Math.max(price, currentPrice * 0.90);
+    price = Math.min(price, currentPrice * 1.10);
+    
+    const timeMs = Date.now() - (points - i) * (timeframe === "1m" ? 60000 : timeframe === "5m" ? 300000 : timeframe === "15m" ? 900000 : timeframe === "1h" ? 3600000 : 14400000);
     
     data.push({
-      time: new Date(Date.now() - (points - i) * (timeframe === "1m" ? 60000 : timeframe === "5m" ? 300000 : timeframe === "15m" ? 900000 : timeframe === "1h" ? 3600000 : 14400000)).toLocaleTimeString(),
-      price: price,
+      time: new Date(timeMs).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+      price: Number(price.toFixed(2)),
       volume: Math.random() * 1000000,
     });
   }
@@ -494,44 +497,71 @@ export default function Trade() {
 
         {/* Right Sidebar - Desktop Only */}
         <div className="hidden lg:flex lg:flex-col h-[calc(100vh-70px)]">
-          {/* Order Book */}
+          {/* Order Book & Trades Tabs */}
           <div className="flex-1 border-b border-border overflow-auto">
-            <div className="p-3 border-b border-border bg-card/50">
-              <h3 className="text-sm font-semibold">Order Book</h3>
-            </div>
+            <Tabs defaultValue="orderbook" className="h-full flex flex-col">
+              <div className="border-b border-border bg-card/50">
+                <TabsList className="w-full grid grid-cols-2 rounded-none h-10">
+                  <TabsTrigger value="orderbook" className="text-xs">
+                    <BookOpen className="h-3 w-3 mr-1" />
+                    Order Book
+                  </TabsTrigger>
+                  <TabsTrigger value="trades" className="text-xs">
+                    <MessageSquare className="h-3 w-3 mr-1" />
+                    Trades
+                  </TabsTrigger>
+                </TabsList>
+              </div>
+
+              <TabsContent value="orderbook" className="flex-1 m-0 overflow-auto">
             <div className="p-3 space-y-1 text-xs font-mono">
-              <div className="grid grid-cols-3 text-muted-foreground pb-2 border-b">
-                <div>Price</div>
-                <div className="text-right">Size</div>
-                <div className="text-right">Total</div>
-              </div>
-              
-              <div className="space-y-0.5">
-                {orderBook?.asks.slice(0, 10).reverse().map((order, i) => (
-                  <div key={i} className="grid grid-cols-3 text-destructive hover:bg-destructive/5 cursor-pointer">
-                    <div>{order.price.toFixed(2)}</div>
-                    <div className="text-right">{order.amount.toFixed(4)}</div>
-                    <div className="text-right">{(order.price * order.amount).toFixed(2)}</div>
+                  <div className="grid grid-cols-3 text-muted-foreground pb-2 border-b">
+                    <div>Price</div>
+                    <div className="text-right">Size</div>
+                    <div className="text-right">Total</div>
                   </div>
-                ))}
-              </div>
+                  
+                  <div className="space-y-0.5">
+                    {orderBook?.asks.slice(0, 10).reverse().map((order, i) => (
+                      <div key={i} className="grid grid-cols-3 text-destructive hover:bg-destructive/5 cursor-pointer">
+                        <div>{order.price.toFixed(2)}</div>
+                        <div className="text-right">{order.amount.toFixed(4)}</div>
+                        <div className="text-right">{(order.price * order.amount).toFixed(2)}</div>
+                      </div>
+                    ))}
+                  </div>
 
-              {currentPrice && (
-                <div className={`py-2 text-center text-base font-bold border-y ${isPositive ? 'text-success' : 'text-destructive'}`}>
-                  ${currentPrice.price.toLocaleString()}
+                  {currentPrice && (
+                    <div className={`py-2 text-center text-base font-bold border-y ${isPositive ? 'text-success' : 'text-destructive'}`}>
+                      ${currentPrice.price.toLocaleString()}
+                    </div>
+                  )}
+
+                  <div className="space-y-0.5 pt-1">
+                    {orderBook?.bids.slice(0, 10).map((order, i) => (
+                      <div key={i} className="grid grid-cols-3 text-success hover:bg-success/5 cursor-pointer">
+                        <div>{order.price.toFixed(2)}</div>
+                        <div className="text-right">{order.amount.toFixed(4)}</div>
+                        <div className="text-right">{(order.price * order.amount).toFixed(2)}</div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              )}
+              </TabsContent>
 
-              <div className="space-y-0.5 pt-1">
-                {orderBook?.bids.slice(0, 10).map((order, i) => (
-                  <div key={i} className="grid grid-cols-3 text-success hover:bg-success/5 cursor-pointer">
-                    <div>{order.price.toFixed(2)}</div>
-                    <div className="text-right">{order.amount.toFixed(4)}</div>
-                    <div className="text-right">{(order.price * order.amount).toFixed(2)}</div>
+              <TabsContent value="trades" className="flex-1 m-0 overflow-auto p-3">
+                <div className="space-y-1 text-xs font-mono">
+                  <div className="grid grid-cols-3 text-muted-foreground pb-2 border-b">
+                    <div>Price</div>
+                    <div className="text-right">Amount</div>
+                    <div className="text-right">Time</div>
                   </div>
-                ))}
-              </div>
-            </div>
+                  <div className="text-center py-8 text-muted-foreground">
+                    Recent trades will appear here
+                  </div>
+                </div>
+              </TabsContent>
+            </Tabs>
           </div>
 
           {/* Trading Panel */}
