@@ -11,32 +11,7 @@ import { BottomNav } from "@/components/bottom-nav";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Order, Wallet } from "@shared/schema";
-import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { TrendingUp, TrendingDown, Maximize2, Settings, MessageSquare, BookOpen } from "lucide-react";
-
-// Generate realistic candlestick data
-const generateChartData = (timeframe: string, currentPrice: number) => {
-  const points = timeframe === "1m" ? 60 : timeframe === "5m" ? 72 : timeframe === "15m" ? 96 : timeframe === "1h" ? 168 : 240;
-  const data = [];
-  let price = currentPrice * 0.98;
-  
-  for (let i = 0; i < points; i++) {
-    const change = (Math.random() - 0.5) * (currentPrice * 0.01);
-    price = price + change;
-    price = Math.max(price, currentPrice * 0.90);
-    price = Math.min(price, currentPrice * 1.10);
-    
-    const timeMs = Date.now() - (points - i) * (timeframe === "1m" ? 60000 : timeframe === "5m" ? 300000 : timeframe === "15m" ? 900000 : timeframe === "1h" ? 3600000 : 14400000);
-    
-    data.push({
-      time: new Date(timeMs).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
-      price: Number(price.toFixed(2)),
-      volume: Math.random() * 1000000,
-    });
-  }
-  
-  return data;
-};
+import { TrendingUp, TrendingDown, BookOpen, MessageSquare } from "lucide-react";
 
 export default function Trade() {
   const { toast } = useToast();
@@ -45,8 +20,6 @@ export default function Trade() {
   const [side, setSide] = useState<"buy" | "sell">("buy");
   const [amount, setAmount] = useState("");
   const [price, setPrice] = useState("");
-  const [timeframe, setTimeframe] = useState("15m");
-  const [chartType, setChartType] = useState<"line" | "area">("area");
 
   const { data: currentPrice } = useQuery<{ price: number; change24h: number }>({
     queryKey: ["/api/markets/price", selectedPair],
@@ -67,15 +40,7 @@ export default function Trade() {
     queryKey: ["/api/markets/orderbook", selectedPair],
   });
 
-  const [chartData, setChartData] = useState<any[]>([]);
   const [livePrice, setLivePrice] = useState<number | null>(null);
-
-  useEffect(() => {
-    if (currentPrice?.price) {
-      setChartData(generateChartData(timeframe, currentPrice.price));
-      setLivePrice(currentPrice.price);
-    }
-  }, [currentPrice, timeframe, selectedPair]);
 
   // Simulate real-time price updates
   useEffect(() => {
@@ -142,14 +107,6 @@ export default function Trade() {
     setAmount((maxAmount * (percent / 100)).toFixed(8));
   };
 
-  const timeframes = [
-    { value: "1m", label: "1m" },
-    { value: "5m", label: "5m" },
-    { value: "15m", label: "15m" },
-    { value: "1h", label: "1H" },
-    { value: "4h", label: "4H" },
-  ];
-
   const activeOrders = orders?.filter(o => o.status === "pending" || o.status === "partial") || [];
   const completedOrders = orders?.filter(o => o.status === "completed" || o.status === "cancelled") || [];
 
@@ -209,138 +166,7 @@ export default function Trade() {
       </header>
 
       <main className="lg:grid lg:grid-cols-[1fr_320px] lg:gap-0">
-        {/* Chart Section */}
         <div className="border-r border-border">
-          {/* Chart Controls */}
-          <div className="flex items-center justify-between border-b border-border p-2 bg-card/50">
-            <div className="flex gap-1">
-              {timeframes.map((tf) => (
-                <Button
-                  key={tf.value}
-                  variant={timeframe === tf.value ? "default" : "ghost"}
-                  size="sm"
-                  className="h-7 text-xs"
-                  onClick={() => setTimeframe(tf.value)}
-                  data-testid={`button-timeframe-${tf.value}`}
-                >
-                  {tf.label}
-                </Button>
-              ))}
-            </div>
-            <div className="flex gap-1">
-              <Button
-                variant={chartType === "line" ? "default" : "ghost"}
-                size="sm"
-                className="h-7 text-xs"
-                onClick={() => setChartType("line")}
-              >
-                Line
-              </Button>
-              <Button
-                variant={chartType === "area" ? "default" : "ghost"}
-                size="sm"
-                className="h-7 text-xs"
-                onClick={() => setChartType("area")}
-              >
-                Area
-              </Button>
-              <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
-                <Settings className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
-                <Maximize2 className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-
-          {/* Chart */}
-          <div className="h-[400px] lg:h-[calc(100vh-180px)] bg-card/30 p-4">
-            {chartData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                {chartType === "area" ? (
-                  <AreaChart data={chartData}>
-                  <defs>
-                    <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={isPositive ? "#10b981" : "#ef4444"} stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor={isPositive ? "#10b981" : "#ef4444"} stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.2} />
-                  <XAxis 
-                    dataKey="time" 
-                    stroke="hsl(var(--muted-foreground))"
-                    tick={{ fontSize: 11 }}
-                    tickLine={false}
-                  />
-                  <YAxis 
-                    domain={['auto', 'auto']}
-                    stroke="hsl(var(--muted-foreground))"
-                    tick={{ fontSize: 11 }}
-                    tickLine={false}
-                    width={80}
-                    tickFormatter={(value) => `$${value.toFixed(0)}`}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: 'hsl(var(--card))',
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '6px',
-                      fontSize: '12px'
-                    }}
-                    formatter={(value: any) => [`$${value.toFixed(2)}`, 'Price']}
-                  />
-                  <Area 
-                    type="monotone" 
-                    dataKey="price" 
-                    stroke={isPositive ? "#10b981" : "#ef4444"}
-                    strokeWidth={2}
-                    fill="url(#colorPrice)"
-                  />
-                </AreaChart>
-              ) : (
-                <LineChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.2} />
-                  <XAxis 
-                    dataKey="time" 
-                    stroke="hsl(var(--muted-foreground))"
-                    tick={{ fontSize: 11 }}
-                    tickLine={false}
-                  />
-                  <YAxis 
-                    domain={['auto', 'auto']}
-                    stroke="hsl(var(--muted-foreground))"
-                    tick={{ fontSize: 11 }}
-                    tickLine={false}
-                    width={80}
-                    tickFormatter={(value) => `$${value.toFixed(0)}`}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: 'hsl(var(--card))',
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '6px',
-                      fontSize: '12px'
-                    }}
-                    formatter={(value: any) => [`$${value.toFixed(2)}`, 'Price']}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="price" 
-                    stroke={isPositive ? "#10b981" : "#ef4444"}
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                </LineChart>
-              )}
-              </ResponsiveContainer>
-            ) : (
-              <div className="flex items-center justify-center h-full">
-                <div className="text-center text-muted-foreground">
-                  <p>Loading chart data...</p>
-                </div>
-              </div>
-            )}
-          </div>
 
           {/* Order Book & Trades - Mobile */}
           <div className="lg:hidden border-t border-border">

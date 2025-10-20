@@ -377,7 +377,7 @@ export function registerRoutes(app: Express) {
         pair: trades.pair,
         amount: trades.amount,
         price: trades.price,
-        createdAt: trades.createdAt,
+        executedAt: trades.executedAt,
         side: sql<string>`CASE 
           WHEN ${trades.buyOrderId} IN (SELECT id FROM ${orders} WHERE ${orders.userId} = ${req.session.userId!}) 
           THEN 'buy' 
@@ -387,7 +387,7 @@ export function registerRoutes(app: Express) {
       .from(trades)
       .innerJoin(orders, or(eq(trades.buyOrderId, orders.id), eq(trades.sellOrderId, orders.id)))
       .where(eq(orders.userId, req.session.userId!))
-      .orderBy(desc(trades.createdAt))
+      .orderBy(desc(trades.executedAt))
       .limit(100);
 
     res.json(userTrades);
@@ -424,7 +424,7 @@ export function registerRoutes(app: Express) {
       .from(trades)
       .innerJoin(orders, or(eq(trades.buyOrderId, orders.id), eq(trades.sellOrderId, orders.id)))
       .where(eq(orders.userId, req.session.userId!))
-      .orderBy(desc(trades.createdAt));
+      .orderBy(desc(trades.executedAt));
 
     res.json({
       totalValue,
