@@ -546,26 +546,9 @@ export function registerRoutes(app: Express) {
           ...data,
           userId: req.session.userId!,
           type: "deposit",
-          txHash: `0x${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}`,
+          status: "pending",
         })
         .returning();
-
-      await db
-        .update(wallets)
-        .set({ 
-          balance: sql`${wallets.balance} + ${parseFloat(data.amount)}` 
-        })
-        .where(
-          and(
-            eq(wallets.userId, req.session.userId!),
-            eq(wallets.currency, data.currency)
-          )
-        );
-
-      await db
-        .update(transactions)
-        .set({ status: "confirmed" })
-        .where(eq(transactions.id, transaction.id));
 
       res.json(transaction);
     } catch (error: any) {
@@ -604,7 +587,7 @@ export function registerRoutes(app: Express) {
           ...data,
           userId: req.session.userId!,
           type: "withdrawal",
-          txHash: `0x${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}`,
+          status: "pending",
         })
         .returning();
 
@@ -614,11 +597,6 @@ export function registerRoutes(app: Express) {
           balance: sql`${wallets.balance} - ${totalAmount}` 
         })
         .where(eq(wallets.id, wallet.id));
-
-      await db
-        .update(transactions)
-        .set({ status: "confirmed" })
-        .where(eq(transactions.id, transaction.id));
 
       res.json(transaction);
     } catch (error: any) {

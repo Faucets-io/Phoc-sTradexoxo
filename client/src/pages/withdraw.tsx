@@ -36,8 +36,8 @@ export default function Withdraw() {
       queryClient.invalidateQueries({ queryKey: ["/api/transactions"] });
       queryClient.invalidateQueries({ queryKey: ["/api/wallets"] });
       toast({
-        title: "Withdrawal initiated",
-        description: "Your withdrawal is being processed. Funds will be sent shortly.",
+        title: "Withdrawal submitted",
+        description: "Your withdrawal request is being processed. Funds will be sent to the blockchain network.",
       });
       setAmount("");
       setAddress("");
@@ -181,10 +181,11 @@ export default function Withdraw() {
               <div className="space-y-1 text-sm">
                 <p className="font-semibold text-warning">Withdrawal Warning</p>
                 <ul className="text-muted-foreground space-y-1 list-disc list-inside">
-                  <li>Verify the destination address carefully</li>
+                  <li>Double-check the destination address - transactions are irreversible</li>
                   <li>Network fee: ~0.0001 {currency}</li>
                   <li>Minimum withdrawal: 0.001 {currency}</li>
-                  <li>Transactions are irreversible</li>
+                  <li>Funds will be deducted immediately and sent to the blockchain</li>
+                  <li>Processing time depends on network congestion</li>
                 </ul>
               </div>
             </div>

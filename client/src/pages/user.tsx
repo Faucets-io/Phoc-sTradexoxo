@@ -11,9 +11,7 @@ import {
   FileText,
   Award,
   Settings,
-  Gift,
   HelpCircle,
-  MessageCircle,
   MessageSquare,
   LogOut,
   Bell,
@@ -195,17 +193,6 @@ export default function UserCenter() {
             </button>
 
             <button
-              onClick={() => setLocation("/referral")}
-              className="flex flex-col items-center gap-2 p-3 hover:bg-accent rounded-lg transition-colors"
-              data-testid="button-referral"
-            >
-              <div className="h-12 w-12 flex items-center justify-center">
-                <Gift className="h-6 w-6 text-primary" />
-              </div>
-              <span className="text-xs text-foreground">Referral</span>
-            </button>
-
-            <button
               onClick={() => setLocation("/help")}
               className="flex flex-col items-center gap-2 p-3 hover:bg-accent rounded-lg transition-colors"
               data-testid="button-help"
@@ -222,20 +209,9 @@ export default function UserCenter() {
               data-testid="button-assistant"
             >
               <div className="h-12 w-12 flex items-center justify-center">
-                <MessageCircle className="h-6 w-6 text-primary" />
-              </div>
-              <span className="text-xs text-foreground">Assistant</span>
-            </button>
-
-            <button
-              onClick={() => setLocation("/feedback")}
-              className="flex flex-col items-center gap-2 p-3 hover:bg-accent rounded-lg transition-colors"
-              data-testid="button-feedback"
-            >
-              <div className="h-12 w-12 flex items-center justify-center">
                 <MessageSquare className="h-6 w-6 text-primary" />
               </div>
-              <span className="text-xs text-foreground">Feedback</span>
+              <span className="text-xs text-foreground">Assistant</span>
             </button>
           </div>
         </div>

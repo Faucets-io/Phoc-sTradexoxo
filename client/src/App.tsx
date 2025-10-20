@@ -24,7 +24,6 @@ import Certification from "@/pages/certification";
 import Help from "@/pages/help";
 import Assistant from "@/pages/assistant";
 import Feedback from "@/pages/feedback";
-import Referral from "@/pages/referral";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -50,7 +49,6 @@ function Router() {
       <Route path="/help" component={Help} />
       <Route path="/assistant" component={Assistant} />
       <Route path="/feedback" component={Feedback} />
-      <Route path="/referral" component={Referral} />
       <Route component={NotFound} />
     </Switch>
   );

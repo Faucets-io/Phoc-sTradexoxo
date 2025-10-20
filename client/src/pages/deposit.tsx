@@ -36,8 +36,8 @@ export default function Deposit() {
       queryClient.invalidateQueries({ queryKey: ["/api/transactions"] });
       queryClient.invalidateQueries({ queryKey: ["/api/wallets"] });
       toast({
-        title: "Deposit initiated",
-        description: "Your deposit is being processed. It may take a few minutes to confirm.",
+        title: "Deposit tracked",
+        description: "Your deposit has been recorded and will be credited after blockchain confirmation.",
       });
       setAmount("");
     },
@@ -141,13 +141,15 @@ export default function Deposit() {
                   <h4 className="font-semibold text-sm">Important Notes:</h4>
                   <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
                     <li>Minimum deposit: 0.001 {currency}</li>
-                    <li>Deposits require 3 network confirmations</li>
-                    <li>Estimated arrival time: 10-30 minutes</li>
+                    <li>Send funds to the address above from your external wallet</li>
+                    <li>Deposits require blockchain network confirmations</li>
+                    <li>Processing time varies by network congestion</li>
+                    <li>Your deposit will be credited after confirmation</li>
                   </ul>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="amount">Amount to Deposit (for tracking)</Label>
+                  <Label htmlFor="amount">Expected Deposit Amount</Label>
                   <Input
                     id="amount"
                     type="number"
@@ -157,7 +159,7 @@ export default function Deposit() {
                     data-testid="input-deposit-amount"
                   />
                   <p className="text-xs text-muted-foreground">
-                    Optional: Enter the amount you're depositing to help track this transaction
+                    Enter the amount you plan to send for tracking purposes. Actual amount received will be credited.
                   </p>
                 </div>
 
@@ -167,7 +169,7 @@ export default function Deposit() {
                   disabled={!amount || depositMutation.isPending}
                   data-testid="button-confirm-deposit"
                 >
-                  {depositMutation.isPending ? "Confirming..." : "Confirm Deposit"}
+                  {depositMutation.isPending ? "Recording..." : "Track Deposit"}
                 </Button>
               </>
             ) : (
