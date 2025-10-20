@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -41,6 +41,7 @@ export default function Trade() {
   });
 
   const [livePrice, setLivePrice] = useState<number | null>(null);
+  const chartContainerRef = useRef<HTMLDivElement>(null);
 
   // Simulate real-time price updates
   useEffect(() => {
@@ -56,6 +57,87 @@ export default function Trade() {
 
     return () => clearInterval(interval);
   }, [currentPrice]);
+
+  // TradingView widget integration - Desktop
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://s3.tradingview.com/tv.js';
+    script.async = true;
+    script.onload = () => {
+      if (typeof (window as any).TradingView !== 'undefined') {
+        // Desktop chart
+        const desktopContainer = document.getElementById('tradingview_chart');
+        if (desktopContainer) {
+          new (window as any).TradingView.widget({
+            autosize: true,
+            symbol: selectedPair.replace('/', ''),
+            interval: 'D',
+            timezone: 'Etc/UTC',
+            theme: 'dark',
+            style: '1',
+            locale: 'en',
+            toolbar_bg: '#0a0a0a',
+            enable_publishing: false,
+            hide_side_toolbar: false,
+            allow_symbol_change: false,
+            container_id: 'tradingview_chart',
+            studies: ['Volume@tv-basicstudies'],
+            disabled_features: ['use_localstorage_for_settings'],
+            enabled_features: ['study_templates'],
+            loading_screen: { backgroundColor: '#0a0a0a' },
+            overrides: {
+              'mainSeriesProperties.candleStyle.upColor': '#22c55e',
+              'mainSeriesProperties.candleStyle.downColor': '#ef4444',
+              'mainSeriesProperties.candleStyle.borderUpColor': '#22c55e',
+              'mainSeriesProperties.candleStyle.borderDownColor': '#ef4444',
+              'mainSeriesProperties.candleStyle.wickUpColor': '#22c55e',
+              'mainSeriesProperties.candleStyle.wickDownColor': '#ef4444',
+            }
+          });
+        }
+
+        // Mobile chart
+        const mobileContainer = document.getElementById('tradingview_chart_mobile');
+        if (mobileContainer) {
+          new (window as any).TradingView.widget({
+            autosize: true,
+            symbol: selectedPair.replace('/', ''),
+            interval: 'D',
+            timezone: 'Etc/UTC',
+            theme: 'dark',
+            style: '1',
+            locale: 'en',
+            toolbar_bg: '#0a0a0a',
+            enable_publishing: false,
+            hide_side_toolbar: true,
+            allow_symbol_change: false,
+            container_id: 'tradingview_chart_mobile',
+            studies: ['Volume@tv-basicstudies'],
+            disabled_features: ['use_localstorage_for_settings', 'header_widget'],
+            enabled_features: [],
+            loading_screen: { backgroundColor: '#0a0a0a' },
+            overrides: {
+              'mainSeriesProperties.candleStyle.upColor': '#22c55e',
+              'mainSeriesProperties.candleStyle.downColor': '#ef4444',
+              'mainSeriesProperties.candleStyle.borderUpColor': '#22c55e',
+              'mainSeriesProperties.candleStyle.borderDownColor': '#ef4444',
+              'mainSeriesProperties.candleStyle.wickUpColor': '#22c55e',
+              'mainSeriesProperties.candleStyle.wickDownColor': '#ef4444',
+            }
+          });
+        }
+      }
+    };
+
+    document.head.appendChild(script);
+
+    return () => {
+      const desktopContainer = document.getElementById('tradingview_chart');
+      const mobileContainer = document.getElementById('tradingview_chart_mobile');
+      if (desktopContainer) desktopContainer.innerHTML = '';
+      if (mobileContainer) mobileContainer.innerHTML = '';
+    };
+  }, [selectedPair]);
 
   const usdtWallet = wallets?.find(w => w.currency === "USDT");
   const usableBalance = parseFloat(usdtWallet?.balance || "0");
@@ -167,6 +249,15 @@ export default function Trade() {
 
       <main className="lg:grid lg:grid-cols-[1fr_320px] lg:gap-0">
         <div className="border-r border-border">
+          {/* TradingView Chart - Desktop */}
+          <div className="hidden lg:block h-[calc(100vh-140px)] bg-card" ref={chartContainerRef}>
+            <div id="tradingview_chart" className="h-full w-full"></div>
+          </div>
+
+          {/* TradingView Chart - Mobile */}
+          <div className="lg:hidden h-[400px] bg-card border-t border-border">
+            <div id="tradingview_chart_mobile" className="h-full w-full"></div>
+          </div>
 
           {/* Order Book & Trades - Mobile */}
           <div className="lg:hidden border-t border-border">
