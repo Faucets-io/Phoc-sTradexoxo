@@ -58,20 +58,36 @@ export default function Trade() {
     return () => clearInterval(interval);
   }, [currentPrice]);
 
-  // TradingView widget integration - Desktop
+  // TradingView widget integration
   useEffect(() => {
+    // Check if script is already loaded
+    if (typeof (window as any).TradingView !== 'undefined') {
+      initializeWidgets();
+      return;
+    }
+
     const script = document.createElement('script');
     script.src = 'https://s3.tradingview.com/tv.js';
     script.async = true;
     script.onload = () => {
-      if (typeof (window as any).TradingView !== 'undefined') {
+      initializeWidgets();
+    };
+
+    document.head.appendChild(script);
+
+    function initializeWidgets() {
+      if (typeof (window as any).TradingView === 'undefined') return;
+
+      // Small delay to ensure DOM is ready
+      setTimeout(() => {
         // Desktop chart
         const desktopContainer = document.getElementById('tradingview_chart');
         if (desktopContainer) {
+          desktopContainer.innerHTML = ''; // Clear previous widget
           new (window as any).TradingView.widget({
             autosize: true,
             symbol: selectedPair.replace('/', ''),
-            interval: 'D',
+            interval: '15',
             timezone: 'Etc/UTC',
             theme: 'dark',
             style: '1',
@@ -99,10 +115,11 @@ export default function Trade() {
         // Mobile chart
         const mobileContainer = document.getElementById('tradingview_chart_mobile');
         if (mobileContainer) {
+          mobileContainer.innerHTML = ''; // Clear previous widget
           new (window as any).TradingView.widget({
             autosize: true,
             symbol: selectedPair.replace('/', ''),
-            interval: 'D',
+            interval: '15',
             timezone: 'Etc/UTC',
             theme: 'dark',
             style: '1',
@@ -126,10 +143,8 @@ export default function Trade() {
             }
           });
         }
-      }
-    };
-
-    document.head.appendChild(script);
+      }, 100);
+    }
 
     return () => {
       const desktopContainer = document.getElementById('tradingview_chart');
