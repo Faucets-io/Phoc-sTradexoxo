@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { DashboardLayout } from "@/components/dashboard-layout";
+import { BottomNav } from "@/components/bottom-nav";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import type { Transaction } from "@shared/schema";
@@ -34,8 +34,14 @@ export default function Transactions() {
   };
 
   return (
-    <DashboardLayout>
-      <div className="p-6 space-y-6">
+    <div className="min-h-screen bg-background pb-20 lg:pb-0">
+      <header className="sticky top-0 z-40 bg-card border-b border-border p-4">
+        <div className="max-w-4xl mx-auto">
+          <h1 className="text-2xl font-bold">Transactions</h1>
+        </div>
+      </header>
+
+      <main className="max-w-4xl mx-auto p-4 space-y-6">
         <div>
           <h2 className="text-3xl font-bold font-display mb-2">Transaction History</h2>
           <p className="text-muted-foreground">View all your deposits and withdrawals</p>
@@ -113,7 +119,9 @@ export default function Transactions() {
             </CardContent>
           </Card>
         )}
-      </div>
-    </DashboardLayout>
+      </main>
+
+      <BottomNav />
+    </div>
   );
 }

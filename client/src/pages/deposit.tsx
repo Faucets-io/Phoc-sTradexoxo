@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { DashboardLayout } from "@/components/dashboard-layout";
+import { BottomNav } from "@/components/bottom-nav";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -73,8 +73,14 @@ export default function Deposit() {
   };
 
   return (
-    <DashboardLayout>
-      <div className="p-3 sm:p-6 max-w-2xl mx-auto space-y-4 sm:space-y-6">
+    <div className="min-h-screen bg-background pb-20 lg:pb-0">
+      <header className="sticky top-0 z-40 bg-card border-b border-border p-4">
+        <div className="max-w-4xl mx-auto">
+          <h1 className="text-2xl font-bold">Deposit</h1>
+        </div>
+      </header>
+
+      <main className="max-w-4xl mx-auto p-4 space-y-6">
         <div>
           <h2 className="text-3xl font-bold font-display mb-2">Deposit Cryptocurrency</h2>
           <p className="text-muted-foreground">Add funds to your trading account</p>
@@ -171,7 +177,9 @@ export default function Deposit() {
             )}
           </CardContent>
         </Card>
-      </div>
-    </DashboardLayout>
+      </main>
+
+      <BottomNav />
+    </div>
   );
 }
