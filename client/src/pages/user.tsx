@@ -14,6 +14,7 @@ import {
   Gift,
   HelpCircle,
   MessageCircle,
+  MessageSquare,
   LogOut,
   Bell,
   ChevronRight,
@@ -172,10 +173,7 @@ export default function UserCenter() {
             </button>
 
             <button
-              onClick={() => {
-                // Navigate to certification
-                console.log("Certification clicked");
-              }}
+              onClick={() => setLocation("/certification")}
               className="flex flex-col items-center gap-2 p-3 hover:bg-accent rounded-lg transition-colors"
               data-testid="button-certification"
             >
@@ -186,10 +184,7 @@ export default function UserCenter() {
             </button>
 
             <button
-              onClick={() => {
-                // Navigate to settings
-                console.log("Settings clicked");
-              }}
+              onClick={() => setLocation("/settings")}
               className="flex flex-col items-center gap-2 p-3 hover:bg-accent rounded-lg transition-colors"
               data-testid="button-settings"
             >
@@ -200,10 +195,7 @@ export default function UserCenter() {
             </button>
 
             <button
-              onClick={() => {
-                // Navigate to referral program
-                console.log("Referral clicked");
-              }}
+              onClick={() => setLocation("/referral")}
               className="flex flex-col items-center gap-2 p-3 hover:bg-accent rounded-lg transition-colors"
               data-testid="button-referral"
             >
@@ -214,10 +206,7 @@ export default function UserCenter() {
             </button>
 
             <button
-              onClick={() => {
-                // Navigate to help center
-                console.log("Help clicked");
-              }}
+              onClick={() => setLocation("/help")}
               className="flex flex-col items-center gap-2 p-3 hover:bg-accent rounded-lg transition-colors"
               data-testid="button-help"
             >
@@ -228,10 +217,7 @@ export default function UserCenter() {
             </button>
 
             <button
-              onClick={() => {
-                // Navigate to AI assistant
-                console.log("Assistant clicked");
-              }}
+              onClick={() => setLocation("/assistant")}
               className="flex flex-col items-center gap-2 p-3 hover:bg-accent rounded-lg transition-colors"
               data-testid="button-assistant"
             >
@@ -242,10 +228,7 @@ export default function UserCenter() {
             </button>
 
             <button
-              onClick={() => {
-                // Navigate to feedback
-                console.log("Feedback clicked");
-              }}
+              onClick={() => setLocation("/feedback")}
               className="flex flex-col items-center gap-2 p-3 hover:bg-accent rounded-lg transition-colors"
               data-testid="button-feedback"
             >
@@ -261,7 +244,7 @@ export default function UserCenter() {
         <div className="space-y-1">
           <Card
             className="hover:bg-accent/50 transition-colors cursor-pointer"
-            onClick={() => console.log("Notifications clicked")}
+            onClick={() => setLocation("/notifications")}
           >
             <CardContent className="flex items-center justify-between p-4">
               <div className="flex items-center gap-3">
@@ -274,7 +257,7 @@ export default function UserCenter() {
 
           <Card
             className="hover:bg-accent/50 transition-colors cursor-pointer"
-            onClick={() => console.log("Settings clicked")}
+            onClick={() => setLocation("/settings")}
           >
             <CardContent className="flex items-center justify-between p-4">
               <div className="flex items-center gap-3">
@@ -287,7 +270,7 @@ export default function UserCenter() {
 
           <Card
             className="hover:bg-accent/50 transition-colors cursor-pointer"
-            onClick={() => console.log("Documents clicked")}
+            onClick={() => setLocation("/documents")}
           >
             <CardContent className="flex items-center justify-between p-4">
               <div className="flex items-center gap-3">
@@ -303,14 +286,11 @@ export default function UserCenter() {
         <Button
           variant="outline"
           className="w-full border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
-          onClick={() => {
-            // Clear auth and redirect to login
-            localStorage.removeItem("token");
-            window.location.href = "/login";
-          }}
+          onClick={() => logoutMutation.mutate()}
+          disabled={logoutMutation.isPending}
         >
           <LogOut className="h-4 w-4 mr-2" />
-          Logout
+          {logoutMutation.isPending ? "Logging out..." : "Logout"}
         </Button>
       </main>
 

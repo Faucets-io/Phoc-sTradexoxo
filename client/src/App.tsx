@@ -17,6 +17,14 @@ import Transactions from "@/pages/transactions";
 import Deposit from "@/pages/deposit";
 import Withdraw from "@/pages/withdraw";
 import TradingHistory from "@/pages/trading-history";
+import Settings from "@/pages/settings";
+import Notifications from "@/pages/notifications";
+import Documents from "@/pages/documents";
+import Certification from "@/pages/certification";
+import Help from "@/pages/help";
+import Assistant from "@/pages/assistant";
+import Feedback from "@/pages/feedback";
+import Referral from "@/pages/referral";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -35,6 +43,14 @@ function Router() {
       <Route path="/deposit" component={Deposit} />
       <Route path="/withdraw" component={Withdraw} />
       <Route path="/history" component={TradingHistory} />
+      <Route path="/settings" component={Settings} />
+      <Route path="/notifications" component={Notifications} />
+      <Route path="/documents" component={Documents} />
+      <Route path="/certification" component={Certification} />
+      <Route path="/help" component={Help} />
+      <Route path="/assistant" component={Assistant} />
+      <Route path="/feedback" component={Feedback} />
+      <Route path="/referral" component={Referral} />
       <Route component={NotFound} />
     </Switch>
   );
