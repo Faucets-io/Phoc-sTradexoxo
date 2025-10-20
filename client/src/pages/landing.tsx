@@ -418,48 +418,16 @@ export default function Landing() {
       {/* Footer */}
       <footer className="border-t border-border py-12 px-4 sm:px-6 lg:px-12 bg-muted/30">
         <div className="max-w-7xl mx-auto">
-          <div className="grid md:grid-cols-4 gap-8 mb-8">
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center">
-                  <BarChart3 className="h-5 w-5 text-primary-foreground" />
-                </div>
-                <span className="font-display text-xl font-bold">CryptoTrade</span>
+          <div className="flex flex-col items-center gap-6 mb-8">
+            <div className="flex items-center gap-2">
+              <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center">
+                <BarChart3 className="h-5 w-5 text-primary-foreground" />
               </div>
-              <p className="text-sm text-muted-foreground">
-                The world's leading cryptocurrency exchange platform.
-              </p>
+              <span className="font-display text-xl font-bold">CryptoTrade</span>
             </div>
-            
-            <div>
-              <h3 className="font-semibold mb-4">Products</h3>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="#" className="hover:text-foreground transition-colors">Spot Trading</a></li>
-                <li><a href="#" className="hover:text-foreground transition-colors">Margin Trading</a></li>
-                <li><a href="#" className="hover:text-foreground transition-colors">Futures</a></li>
-                <li><a href="#" className="hover:text-foreground transition-colors">Earn</a></li>
-              </ul>
-            </div>
-            
-            <div>
-              <h3 className="font-semibold mb-4">Company</h3>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="#" className="hover:text-foreground transition-colors">About Us</a></li>
-                <li><a href="#" className="hover:text-foreground transition-colors">Careers</a></li>
-                <li><a href="#" className="hover:text-foreground transition-colors">Blog</a></li>
-                <li><a href="#" className="hover:text-foreground transition-colors">Press</a></li>
-              </ul>
-            </div>
-            
-            <div>
-              <h3 className="font-semibold mb-4">Support</h3>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="#" className="hover:text-foreground transition-colors">Help Center</a></li>
-                <li><a href="#" className="hover:text-foreground transition-colors">API Documentation</a></li>
-                <li><a href="#" className="hover:text-foreground transition-colors">Fees</a></li>
-                <li><a href="#" className="hover:text-foreground transition-colors">Contact</a></li>
-              </ul>
-            </div>
+            <p className="text-sm text-muted-foreground text-center max-w-md">
+              The world's leading cryptocurrency exchange platform.
+            </p>
           </div>
           
           <div className="border-t border-border pt-8">
