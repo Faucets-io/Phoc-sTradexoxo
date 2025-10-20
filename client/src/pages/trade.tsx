@@ -60,6 +60,11 @@ export default function Trade() {
 
   // TradingView widget integration
   useEffect(() => {
+    // Get current theme
+    const isDark = document.documentElement.classList.contains('dark');
+    const chartTheme = isDark ? 'dark' : 'light';
+    const bgColor = isDark ? '#0a0a0a' : '#ffffff';
+    
     // Check if script is already loaded
     if (typeof (window as any).TradingView !== 'undefined') {
       initializeWidgets();
@@ -89,10 +94,10 @@ export default function Trade() {
             symbol: selectedPair.replace('/', ''),
             interval: '15',
             timezone: 'Etc/UTC',
-            theme: 'dark',
+            theme: chartTheme,
             style: '1',
             locale: 'en',
-            toolbar_bg: '#0a0a0a',
+            toolbar_bg: bgColor,
             enable_publishing: false,
             hide_side_toolbar: false,
             allow_symbol_change: false,
@@ -100,7 +105,7 @@ export default function Trade() {
             studies: ['Volume@tv-basicstudies'],
             disabled_features: ['use_localstorage_for_settings'],
             enabled_features: ['study_templates'],
-            loading_screen: { backgroundColor: '#0a0a0a' },
+            loading_screen: { backgroundColor: bgColor },
             overrides: {
               'mainSeriesProperties.candleStyle.upColor': '#22c55e',
               'mainSeriesProperties.candleStyle.downColor': '#ef4444',
@@ -121,10 +126,10 @@ export default function Trade() {
             symbol: selectedPair.replace('/', ''),
             interval: '15',
             timezone: 'Etc/UTC',
-            theme: 'dark',
+            theme: chartTheme,
             style: '1',
             locale: 'en',
-            toolbar_bg: '#0a0a0a',
+            toolbar_bg: bgColor,
             enable_publishing: false,
             hide_side_toolbar: true,
             allow_symbol_change: false,
@@ -132,7 +137,7 @@ export default function Trade() {
             studies: ['Volume@tv-basicstudies'],
             disabled_features: ['use_localstorage_for_settings', 'header_widget'],
             enabled_features: [],
-            loading_screen: { backgroundColor: '#0a0a0a' },
+            loading_screen: { backgroundColor: bgColor },
             overrides: {
               'mainSeriesProperties.candleStyle.upColor': '#22c55e',
               'mainSeriesProperties.candleStyle.downColor': '#ef4444',
@@ -146,7 +151,22 @@ export default function Trade() {
       }, 100);
     }
 
+    // Listen for theme changes
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.attributeName === 'class') {
+          initializeWidgets();
+        }
+      });
+    });
+    
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class']
+    });
+
     return () => {
+      observer.disconnect();
       const desktopContainer = document.getElementById('tradingview_chart');
       const mobileContainer = document.getElementById('tradingview_chart_mobile');
       if (desktopContainer) desktopContainer.innerHTML = '';
