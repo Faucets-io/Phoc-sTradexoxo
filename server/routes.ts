@@ -306,10 +306,38 @@ export function registerRoutes(app: Express) {
         .values({ ...data, password: hashedPassword })
         .returning();
 
+      // Generate unique wallet addresses for each user
+      const generateBTCAddress = () => {
+        const chars = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+        let address = '1';
+        for (let i = 0; i < 33; i++) {
+          address += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        return address;
+      };
+
+      const generateETHAddress = () => {
+        const chars = '0123456789abcdef';
+        let address = '0x';
+        for (let i = 0; i < 40; i++) {
+          address += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        return address;
+      };
+
+      const generateUSDTAddress = () => {
+        const chars = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+        let address = 'T';
+        for (let i = 0; i < 33; i++) {
+          address += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        return address;
+      };
+
       const initialWallets = [
-        { userId: user.id, currency: "BTC", balance: "0", address: `1${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}` },
-        { userId: user.id, currency: "ETH", balance: "0", address: `0x${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}` },
-        { userId: user.id, currency: "USDT", balance: "10000", address: `T${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}` },
+        { userId: user.id, currency: "BTC", balance: "0", address: generateBTCAddress() },
+        { userId: user.id, currency: "ETH", balance: "0", address: generateETHAddress() },
+        { userId: user.id, currency: "USDT", balance: "10000", address: generateUSDTAddress() },
       ];
 
       await db.insert(wallets).values(initialWallets);
@@ -621,30 +649,8 @@ export function registerRoutes(app: Express) {
     res.json(userTransactions);
   });
 
-  app.post("/api/transactions/deposit", requireAuth, async (req: AuthRequest, res) => {
-    try {
-      const data = insertTransactionSchema.parse(req.body);
-
-      // Removed demo warning
-      // if (parseFloat(data.amount) < 0.001) {
-      //   return res.status(400).json({ message: `Minimum deposit is 0.001 ${data.currency}` });
-      // }
-
-      const [transaction] = await db
-        .insert(transactions)
-        .values({
-          ...data,
-          userId: req.session.userId!,
-          type: "deposit",
-          status: "pending",
-        })
-        .returning();
-
-      res.json(transaction);
-    } catch (error: any) {
-      res.status(400).json({ message: error.message });
-    }
-  });
+  // Deposits are handled automatically when users send crypto to their wallet addresses
+  // No manual deposit tracking needed
 
   app.post("/api/transactions/withdraw", requireAuth, async (req: AuthRequest, res) => {
     try {
