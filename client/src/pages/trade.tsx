@@ -44,6 +44,10 @@ export default function Trade() {
 
   const [livePrice, setLivePrice] = useState<number | null>(null);
   const chartContainerRef = useRef<HTMLDivElement>(null);
+  const [liveOrderBook, setLiveOrderBook] = useState<{
+    bids: Array<{ price: number; amount: number }>;
+    asks: Array<{ price: number; amount: number }>;
+  } | null>(null);
 
   // Real-time price updates
   useEffect(() => {
@@ -59,6 +63,57 @@ export default function Trade() {
 
     return () => clearInterval(interval);
   }, [currentPrice]);
+
+  // Simulated live order book updates
+  useEffect(() => {
+    if (!orderBook || !currentPrice) return;
+
+    // Initialize with real order book data
+    setLiveOrderBook(orderBook);
+
+    const interval = setInterval(() => {
+      setLiveOrderBook(prev => {
+        if (!prev) return orderBook;
+
+        // Simulate order book updates with realistic changes
+        const updatedBids = prev.bids.map(order => ({
+          price: order.price + (Math.random() - 0.5) * (currentPrice.price * 0.0001),
+          amount: Math.max(0.0001, order.amount + (Math.random() - 0.5) * 0.5)
+        }));
+
+        const updatedAsks = prev.asks.map(order => ({
+          price: order.price + (Math.random() - 0.5) * (currentPrice.price * 0.0001),
+          amount: Math.max(0.0001, order.amount + (Math.random() - 0.5) * 0.5)
+        }));
+
+        // Occasionally add/remove orders to simulate market activity
+        if (Math.random() > 0.7 && updatedBids.length < 15) {
+          updatedBids.push({
+            price: currentPrice.price * (0.995 + Math.random() * 0.004),
+            amount: Math.random() * 2
+          });
+        }
+
+        if (Math.random() > 0.7 && updatedAsks.length < 15) {
+          updatedAsks.push({
+            price: currentPrice.price * (1.001 + Math.random() * 0.004),
+            amount: Math.random() * 2
+          });
+        }
+
+        // Sort orders
+        updatedBids.sort((a, b) => b.price - a.price);
+        updatedAsks.sort((a, b) => a.price - b.price);
+
+        return {
+          bids: updatedBids.slice(0, 12),
+          asks: updatedAsks.slice(0, 12)
+        };
+      });
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [orderBook, currentPrice]);
 
   // TradingView widget integration
   useEffect(() => {
@@ -345,8 +400,8 @@ export default function Trade() {
                 </div>
 
                 <div className="space-y-0.5">
-                  {orderBook?.asks.slice(0, 8).reverse().map((order, i) => (
-                    <div key={i} className="grid grid-cols-3 text-destructive">
+                  {(liveOrderBook || orderBook)?.asks.slice(0, 8).reverse().map((order, i) => (
+                    <div key={i} className="grid grid-cols-3 text-destructive transition-all">
                       <div>{order.price.toFixed(2)}</div>
                       <div className="text-right">{order.amount.toFixed(4)}</div>
                       <div className="text-right">{(order.price * order.amount).toFixed(2)}</div>
@@ -361,8 +416,8 @@ export default function Trade() {
                 )}
 
                 <div className="space-y-0.5 pt-1">
-                  {orderBook?.bids.slice(0, 8).map((order, i) => (
-                    <div key={i} className="grid grid-cols-3 text-success">
+                  {(liveOrderBook || orderBook)?.bids.slice(0, 8).map((order, i) => (
+                    <div key={i} className="grid grid-cols-3 text-success transition-all">
                       <div>{order.price.toFixed(2)}</div>
                       <div className="text-right">{order.amount.toFixed(4)}</div>
                       <div className="text-right">{(order.price * order.amount).toFixed(2)}</div>
@@ -544,8 +599,8 @@ export default function Trade() {
                   </div>
 
                   <div className="space-y-0.5">
-                    {orderBook?.asks.slice(0, 10).reverse().map((order, i) => (
-                      <div key={i} className="grid grid-cols-3 text-destructive hover:bg-destructive/5 cursor-pointer">
+                    {(liveOrderBook || orderBook)?.asks.slice(0, 10).reverse().map((order, i) => (
+                      <div key={i} className="grid grid-cols-3 text-destructive hover:bg-destructive/5 cursor-pointer transition-all">
                         <div>{order.price.toFixed(2)}</div>
                         <div className="text-right">{order.amount.toFixed(4)}</div>
                         <div className="text-right">{(order.price * order.amount).toFixed(2)}</div>
@@ -555,13 +610,13 @@ export default function Trade() {
 
                   {currentPrice && (
                     <div className={`py-2 text-center text-base font-bold border-y ${isPositive ? 'text-success' : 'text-destructive'}`}>
-                      ${currentPrice.price.toLocaleString()}
+                      ${livePrice ? livePrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : currentPrice.price.toLocaleString()}
                     </div>
                   )}
 
                   <div className="space-y-0.5 pt-1">
-                    {orderBook?.bids.slice(0, 10).map((order, i) => (
-                      <div key={i} className="grid grid-cols-3 text-success hover:bg-success/5 cursor-pointer">
+                    {(liveOrderBook || orderBook)?.bids.slice(0, 10).map((order, i) => (
+                      <div key={i} className="grid grid-cols-3 text-success hover:bg-success/5 cursor-pointer transition-all">
                         <div>{order.price.toFixed(2)}</div>
                         <div className="text-right">{order.amount.toFixed(4)}</div>
                         <div className="text-right">{(order.price * order.amount).toFixed(2)}</div>
