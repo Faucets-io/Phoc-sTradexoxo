@@ -88,16 +88,28 @@ export default function Trade() {
       setRecentTrades(prev => [trade, ...prev].slice(0, 50));
     };
 
-    // Generate initial trades
-    for (let i = 0; i < 20; i++) {
-      setTimeout(() => generateTrade(), i * 100);
+    // Generate initial trades immediately
+    const initialTrades: RecentTrade[] = [];
+    const basePrice = currentPrice.price;
+    
+    for (let i = 0; i < 25; i++) {
+      const priceVariation = (Math.random() - 0.5) * (basePrice * 0.001);
+      initialTrades.push({
+        id: `${Date.now()}-${Math.random()}-${i}`,
+        price: basePrice + priceVariation,
+        amount: Math.random() * 2 + 0.001,
+        side: Math.random() > 0.5 ? "buy" : "sell",
+        timestamp: new Date(Date.now() - i * 1000),
+      });
     }
+    
+    setRecentTrades(initialTrades);
 
     // Continue generating trades
-    const interval = setInterval(generateTrade, 300 + Math.random() * 500);
+    const interval = setInterval(generateTrade, 500 + Math.random() * 1000);
 
     return () => clearInterval(interval);
-  }, [currentPrice, livePrice]);
+  }, [currentPrice?.price]);
 
   // TradingView widget integration
   useEffect(() => {
