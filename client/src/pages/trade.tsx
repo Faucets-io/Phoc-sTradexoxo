@@ -356,7 +356,7 @@ export default function Trade() {
 
                 {currentPrice && (
                   <div className={`py-2 text-center text-base font-bold border-y ${isPositive ? 'text-success' : 'text-destructive'}`}>
-                    ${currentPrice.price.toLocaleString()}
+                    ${livePrice ? livePrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : currentPrice.price.toLocaleString()}
                   </div>
                 )}
 
