@@ -22,13 +22,6 @@ export default function Trade() {
   const [side, setSide] = useState<"buy" | "sell">("buy");
   const [amount, setAmount] = useState("");
   const [price, setPrice] = useState("");
-  const [recentTrades, setRecentTrades] = useState<Array<{
-    id: string;
-    price: number;
-    amount: number;
-    time: string;
-    side: 'buy' | 'sell';
-  }>>([]);
 
   const { data: currentPrice } = useQuery<{ price: number; change24h: number }>({
     queryKey: ["/api/markets/price", selectedPair],
@@ -271,47 +264,6 @@ export default function Trade() {
   const priceChange = currentPrice?.change24h || 0;
   const isPositive = priceChange >= 0;
 
-  // Generate realistic simulated trades
-  useEffect(() => {
-    if (!currentPrice?.price) return;
-
-    // Initialize with some trades
-    const initialTrades = Array.from({ length: 15 }, (_, i) => {
-      const basePrice = currentPrice.price;
-      const priceVariation = (Math.random() - 0.5) * (basePrice * 0.001);
-      const now = new Date();
-      now.setSeconds(now.getSeconds() - (15 - i) * 3);
-      
-      return {
-        id: `trade-${Date.now()}-${i}`,
-        price: basePrice + priceVariation,
-        amount: Math.random() * 0.5 + 0.01,
-        time: now.toLocaleTimeString(),
-        side: Math.random() > 0.5 ? 'buy' as const : 'sell' as const,
-      };
-    });
-    
-    setRecentTrades(initialTrades);
-
-    // Add new trades periodically
-    const interval = setInterval(() => {
-      const basePrice = livePrice || currentPrice.price;
-      const priceVariation = (Math.random() - 0.5) * (basePrice * 0.001);
-      
-      const newTrade = {
-        id: `trade-${Date.now()}`,
-        price: basePrice + priceVariation,
-        amount: Math.random() * 0.5 + 0.01,
-        time: new Date().toLocaleTimeString(),
-        side: Math.random() > 0.5 ? 'buy' as const : 'sell' as const,
-      };
-
-      setRecentTrades(prev => [newTrade, ...prev.slice(0, 19)]);
-    }, Math.random() * 3000 + 2000); // Random interval between 2-5 seconds
-
-    return () => clearInterval(interval);
-  }, [currentPrice, livePrice]);
-
   return (
     <div className="min-h-screen bg-background pb-20 lg:pb-0">
       <header className="sticky top-0 z-40 bg-card/95 backdrop-blur-md border-b border-border shadow-sm">
@@ -414,35 +366,6 @@ export default function Trade() {
                       <div>{order.price.toFixed(2)}</div>
                       <div className="text-right">{order.amount.toFixed(4)}</div>
                       <div className="text-right">{(order.price * order.amount).toFixed(2)}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Recent Trades - Mobile */}
-          <div className="lg:hidden border-t border-border bg-card">
-            <div className="p-3">
-              <h3 className="text-sm font-semibold mb-3 text-muted-foreground uppercase tracking-wide">Recent Trades</h3>
-              <div className="space-y-1 text-xs font-mono max-h-[200px] overflow-auto">
-                <div className="grid grid-cols-3 text-muted-foreground pb-2 border-b sticky top-0 bg-card">
-                  <div>Price</div>
-                  <div className="text-right">Amount</div>
-                  <div className="text-right">Time</div>
-                </div>
-                <div className="space-y-0.5">
-                  {recentTrades.slice(0, 10).map((trade) => (
-                    <div 
-                      key={trade.id} 
-                      className={cn(
-                        "grid grid-cols-3",
-                        trade.side === 'buy' ? 'text-success' : 'text-destructive'
-                      )}
-                    >
-                      <div>{trade.price.toFixed(2)}</div>
-                      <div className="text-right">{trade.amount.toFixed(4)}</div>
-                      <div className="text-right text-muted-foreground">{trade.time}</div>
                     </div>
                   ))}
                 </div>
@@ -647,43 +570,6 @@ export default function Trade() {
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
-
-          {/* Recent Trades */}
-          <div className="h-[200px] border-b border-border overflow-auto bg-card/30">
-            <div className="h-full flex flex-col">
-              <div className="border-b border-border bg-card/50">
-                <div className="w-full h-10 flex items-center px-3">
-                  <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Recent Trades
-                  </div>
-                </div>
-              </div>
-              <ScrollArea className="flex-1">
-                <div className="p-3 space-y-1 text-xs font-mono">
-                  <div className="grid grid-cols-3 text-muted-foreground pb-2 border-b">
-                    <div>Price</div>
-                    <div className="text-right">Amount</div>
-                    <div className="text-right">Time</div>
-                  </div>
-                  <div className="space-y-0.5">
-                    {recentTrades.map((trade) => (
-                      <div 
-                        key={trade.id} 
-                        className={cn(
-                          "grid grid-cols-3 animate-in fade-in duration-300",
-                          trade.side === 'buy' ? 'text-success' : 'text-destructive'
-                        )}
-                      >
-                        <div>{trade.price.toFixed(2)}</div>
-                        <div className="text-right">{trade.amount.toFixed(4)}</div>
-                        <div className="text-right text-muted-foreground">{trade.time}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </ScrollArea>
             </div>
           </div>
 
