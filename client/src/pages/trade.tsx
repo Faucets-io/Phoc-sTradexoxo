@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,6 +12,9 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Order, Wallet } from "@shared/schema";
 import { TrendingUp, TrendingDown, BookOpen, MessageSquare } from "lucide-react";
 import { format } from "date-fns";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 interface RecentTrade {
   id: string;
@@ -42,9 +44,9 @@ export default function Trade() {
     queryKey: ["/api/wallets"],
   });
 
-  const { data: orderBook } = useQuery<{ 
-    bids: Array<{ price: number; amount: number }>; 
-    asks: Array<{ price: number; amount: number }> 
+  const { data: orderBook } = useQuery<{
+    bids: Array<{ price: number; amount: number }>;
+    asks: Array<{ price: number; amount: number }>
   }>({
     queryKey: ["/api/markets/orderbook", selectedPair],
   });
@@ -56,7 +58,7 @@ export default function Trade() {
   // Simulate real-time price updates
   useEffect(() => {
     if (!currentPrice?.price) return;
-    
+
     const interval = setInterval(() => {
       setLivePrice(prev => {
         if (!prev) return currentPrice.price;
@@ -103,7 +105,7 @@ export default function Trade() {
     const isDark = document.documentElement.classList.contains('dark');
     const chartTheme = isDark ? 'dark' : 'light';
     const bgColor = isDark ? '#0a0a0a' : '#ffffff';
-    
+
     // Check if script is already loaded
     if (typeof (window as any).TradingView !== 'undefined') {
       initializeWidgets();
@@ -198,7 +200,7 @@ export default function Trade() {
         }
       });
     });
-    
+
     observer.observe(document.documentElement, {
       attributes: true,
       attributeFilter: ['class']
@@ -300,7 +302,7 @@ export default function Trade() {
               )}
             </div>
           </div>
-          
+
           {/* Live Price Ticker */}
           {livePrice && currentPrice && (
             <div className="flex items-center gap-4 text-xs font-mono">
@@ -347,7 +349,7 @@ export default function Trade() {
                     <div className="text-right">Amount</div>
                     <div className="text-right">Total</div>
                   </div>
-                  
+
                   <div className="space-y-0.5">
                     {orderBook?.asks.slice(0, 8).reverse().map((order, i) => (
                       <div key={i} className="grid grid-cols-3 text-destructive">
@@ -576,13 +578,13 @@ export default function Trade() {
               </div>
 
               <TabsContent value="orderbook" className="flex-1 m-0 overflow-auto">
-            <div className="p-3 space-y-1 text-xs font-mono">
+                <div className="p-3 space-y-1 text-xs font-mono">
                   <div className="grid grid-cols-3 text-muted-foreground pb-2 border-b">
                     <div>Price</div>
                     <div className="text-right">Size</div>
                     <div className="text-right">Total</div>
                   </div>
-                  
+
                   <div className="space-y-0.5">
                     {orderBook?.asks.slice(0, 10).reverse().map((order, i) => (
                       <div key={i} className="grid grid-cols-3 text-destructive hover:bg-destructive/5 cursor-pointer">

@@ -11,13 +11,14 @@ app.use(express.urlencoded({ extended: false }));
 
 app.use(
   session({
-    secret: process.env.SESSION_SECRET || "crypto-trade-secret-key-change-in-production",
+    secret: process.env.SESSION_SECRET || "crypto-trade-secret-key-please-change",
     resave: false,
     saveUninitialized: false,
     cookie: {
       secure: process.env.NODE_ENV === "production",
       httpOnly: true,
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+      sameSite: 'strict',
     },
   })
 );

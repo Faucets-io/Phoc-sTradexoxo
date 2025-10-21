@@ -1,4 +1,3 @@
-
 import type { Express } from "express";
 import { db } from "./db";
 import { users, wallets, orders, trades, transactions } from "@shared/schema";
@@ -7,6 +6,8 @@ import bcrypt from "bcryptjs";
 import { insertUserSchema, loginSchema, insertOrderSchema, insertTransactionSchema } from "@shared/schema";
 import { requireAuth, type AuthRequest } from "./auth";
 import { WebSocketServer, WebSocket } from "ws";
+import rateLimit from "express-rate-limit";
+
 
 // Simple in-memory cache for crypto prices with real-time data
 let priceCache: Record<string, { price: number; change24h: number; volume24h: number; marketCap: number; high24h: number; low24h: number; lastUpdated: number }> = {
@@ -52,7 +53,7 @@ async function fetchCryptoPrices() {
   try {
     const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,binancecoin,solana,ripple&vs_currencies=usd&include_24hr_change=true&include_24hr_vol=true&include_market_cap=true&include_24h_high=true&include_24h_low=true');
     const data = await response.json();
-    
+
     if (data.bitcoin) {
       priceCache["BTC/USDT"] = {
         price: data.bitcoin.usd,
@@ -64,7 +65,7 @@ async function fetchCryptoPrices() {
         lastUpdated: Date.now()
       };
     }
-    
+
     if (data.ethereum) {
       priceCache["ETH/USDT"] = {
         price: data.ethereum.usd,
@@ -76,7 +77,7 @@ async function fetchCryptoPrices() {
         lastUpdated: Date.now()
       };
     }
-    
+
     if (data.binancecoin) {
       priceCache["BNB/USDT"] = {
         price: data.binancecoin.usd,
@@ -88,7 +89,7 @@ async function fetchCryptoPrices() {
         lastUpdated: Date.now()
       };
     }
-    
+
     if (data.solana) {
       priceCache["SOL/USDT"] = {
         price: data.solana.usd,
@@ -100,7 +101,7 @@ async function fetchCryptoPrices() {
         lastUpdated: Date.now()
       };
     }
-    
+
     if (data.ripple) {
       priceCache["XRP/USDT"] = {
         price: data.ripple.usd,
@@ -112,7 +113,7 @@ async function fetchCryptoPrices() {
         lastUpdated: Date.now()
       };
     }
-    
+
     console.log('Price cache updated successfully');
   } catch (error) {
     console.error('Failed to fetch crypto prices:', error);
@@ -133,7 +134,7 @@ export function broadcastPriceUpdate() {
     { symbol: "BNB/USDT", name: "Binance Coin", ...priceCache["BNB/USDT"] },
     { symbol: "SOL/USDT", name: "Solana", ...priceCache["SOL/USDT"] },
   ];
-  
+
   const message = JSON.stringify({ type: 'priceUpdate', data: markets });
   wsClients.forEach(client => {
     if (client.readyState === WebSocket.OPEN) {
@@ -145,22 +146,22 @@ export function broadcastPriceUpdate() {
 export function setupWebSocket(wss: WebSocketServer) {
   wss.on('connection', (ws) => {
     wsClients.add(ws);
-    
+
     // Send initial price data
     broadcastPriceUpdate();
-    
+
     ws.on('close', () => {
       wsClients.delete(ws);
     });
   });
-  
+
   // Broadcast updates every 5 seconds
   setInterval(broadcastPriceUpdate, 5000);
 }
 
 async function matchOrders(newOrder: any) {
   const opposingSide = newOrder.side === "buy" ? "sell" : "buy";
-  
+
   const opposingOrders = await db
     .select()
     .from(orders)
@@ -271,10 +272,19 @@ async function matchOrders(newOrder: any) {
 }
 
 export function registerRoutes(app: Express) {
-  app.post("/api/auth/signup", async (req, res) => {
+  // Rate limiting for auth endpoints
+  const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 5, // 5 requests per window
+    message: "Too many authentication attempts, please try again later",
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
+
+  app.post("/api/auth/signup", authLimiter, async (req, res) => {
     try {
       const data = insertUserSchema.parse(req.body);
-      
+
       const existingUser = await db
         .select()
         .from(users)
@@ -290,7 +300,7 @@ export function registerRoutes(app: Express) {
       }
 
       const hashedPassword = await bcrypt.hash(data.password, 10);
-      
+
       const [user] = await db
         .insert(users)
         .values({ ...data, password: hashedPassword })
@@ -305,7 +315,7 @@ export function registerRoutes(app: Express) {
       await db.insert(wallets).values(initialWallets);
 
       req.session.userId = user.id;
-      
+
       const { password: _, ...userWithoutPassword } = user;
       res.json(userWithoutPassword);
     } catch (error: any) {
@@ -313,22 +323,28 @@ export function registerRoutes(app: Express) {
     }
   });
 
-  app.post("/api/auth/login", async (req, res) => {
+  app.post("/api/auth/login", authLimiter, async (req, res) => {
     try {
       const data = loginSchema.parse(req.body);
-      
+
       const [user] = await db
         .select()
         .from(users)
         .where(eq(users.email, data.email))
         .limit(1);
 
-      if (!user || !(await bcrypt.compare(data.password, user.password))) {
+      if (!user) {
+        return res.status(401).json({ message: "Invalid email or password" });
+      }
+
+      const passwordMatch = await bcrypt.compare(data.password, user.password);
+
+      if (!passwordMatch) {
         return res.status(401).json({ message: "Invalid email or password" });
       }
 
       req.session.userId = user.id;
-      
+
       const { password: _, ...userWithoutPassword } = user;
       res.json(userWithoutPassword);
     } catch (error: any) {
@@ -405,7 +421,7 @@ export function registerRoutes(app: Express) {
 
   app.get("/api/markets/orderbook/:pair", async (req, res) => {
     const { pair } = req.params;
-    
+
     const buyOrders = await db
       .select()
       .from(orders)
@@ -479,7 +495,7 @@ export function registerRoutes(app: Express) {
       const currentPrice = wallet.currency === "USDT" ? 1 : (priceCache[`${wallet.currency}/USDT`]?.price || 0);
       const value = parseFloat(wallet.balance) * currentPrice;
       totalValue += value;
-      
+
       breakdown.push({
         currency: wallet.currency,
         balance: wallet.balance,
@@ -509,7 +525,7 @@ export function registerRoutes(app: Express) {
   app.post("/api/orders", requireAuth, async (req: AuthRequest, res) => {
     try {
       const data = insertOrderSchema.parse(req.body);
-      
+
       const currentPrice = priceCache[data.pair]?.price || 42156.84;
       const orderPrice = data.type === "market" ? currentPrice : parseFloat(data.price || "0");
 
@@ -537,7 +553,7 @@ export function registerRoutes(app: Express) {
 
       if (data.side === "buy") {
         const requiredAmount = parseFloat(data.amount) * orderPrice;
-        
+
         if (parseFloat(quoteCurrencyWallet.balance) < requiredAmount) {
           return res.status(400).json({ message: "Insufficient balance" });
         }
@@ -572,7 +588,7 @@ export function registerRoutes(app: Express) {
 
   app.delete("/api/orders/:id", requireAuth, async (req: AuthRequest, res) => {
     const { id } = req.params;
-    
+
     const [order] = await db
       .select()
       .from(orders)
@@ -608,10 +624,11 @@ export function registerRoutes(app: Express) {
   app.post("/api/transactions/deposit", requireAuth, async (req: AuthRequest, res) => {
     try {
       const data = insertTransactionSchema.parse(req.body);
-      
-      if (parseFloat(data.amount) < 0.001) {
-        return res.status(400).json({ message: `Minimum deposit is 0.001 ${data.currency}` });
-      }
+
+      // Removed demo warning
+      // if (parseFloat(data.amount) < 0.001) {
+      //   return res.status(400).json({ message: `Minimum deposit is 0.001 ${data.currency}` });
+      // }
 
       const [transaction] = await db
         .insert(transactions)
@@ -632,10 +649,11 @@ export function registerRoutes(app: Express) {
   app.post("/api/transactions/withdraw", requireAuth, async (req: AuthRequest, res) => {
     try {
       const data = insertTransactionSchema.parse(req.body);
-      
-      if (parseFloat(data.amount) < 0.001) {
-        return res.status(400).json({ message: `Minimum withdrawal is 0.001 ${data.currency}` });
-      }
+
+      // Removed demo warning
+      // if (parseFloat(data.amount) < 0.001) {
+      //   return res.status(400).json({ message: `Minimum withdrawal is 0.001 ${data.currency}` });
+      // }
 
       const [wallet] = await db
         .select()
@@ -649,7 +667,7 @@ export function registerRoutes(app: Express) {
         .limit(1);
 
       const totalAmount = parseFloat(data.amount) + 0.0001;
-      
+
       if (parseFloat(wallet.balance) < totalAmount) {
         return res.status(400).json({ message: "Insufficient balance (including network fee)" });
       }

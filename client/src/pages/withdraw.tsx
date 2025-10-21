@@ -176,16 +176,16 @@ export default function Withdraw() {
               )}
             </div>
 
-            <div className="p-4 rounded-lg bg-warning/10 border border-warning/20 flex gap-3">
-              <AlertCircle className="h-5 w-5 text-warning flex-shrink-0 mt-0.5" />
+            <div className="p-4 rounded-lg bg-primary/10 border border-primary/20 flex gap-3">
+              <AlertCircle className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
               <div className="space-y-1 text-sm">
-                <p className="font-semibold text-warning">Withdrawal Warning</p>
+                <p className="font-semibold text-primary">Withdrawal Information</p>
                 <ul className="text-muted-foreground space-y-1 list-disc list-inside">
                   <li>Double-check the destination address - transactions are irreversible</li>
                   <li>Network fee: ~0.0001 {currency}</li>
                   <li>Minimum withdrawal: 0.001 {currency}</li>
-                  <li>Funds will be deducted immediately and sent to the blockchain</li>
-                  <li>Processing time depends on network congestion</li>
+                  <li>Processing time: 10-30 minutes depending on network</li>
+                  <li>Transactions are sent to the blockchain immediately</li>
                 </ul>
               </div>
             </div>

@@ -159,14 +159,14 @@ export default function Deposit() {
                   </p>
                 </div>
 
-                <div className="p-4 rounded-lg bg-muted space-y-2">
-                  <h4 className="font-semibold text-sm">Important Notes:</h4>
+                <div className="p-4 rounded-lg bg-primary/10 border border-primary/20 space-y-2">
+                  <h4 className="font-semibold text-sm">Deposit Instructions:</h4>
                   <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
                     <li>Minimum deposit: 0.001 {currency}</li>
                     <li>Send funds to the address above from your external wallet</li>
-                    <li>Deposits require blockchain network confirmations</li>
-                    <li>Processing time varies by network congestion</li>
-                    <li>Your deposit will be credited after confirmation</li>
+                    <li>Deposits require 3 network confirmations for {currency}</li>
+                    <li>Average processing time: 10-30 minutes</li>
+                    <li>Funds are credited automatically after confirmation</li>
                   </ul>
                 </div>
 
