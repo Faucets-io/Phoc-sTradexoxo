@@ -651,8 +651,25 @@ export function registerRoutes(app: Express) {
     res.json(userTransactions);
   });
 
-  // Deposits are handled automatically when users send crypto to their wallet addresses
-  // No manual deposit tracking needed
+  // TODO: Blockchain Integration Required for Real Deposits
+  // Current addresses are simulated. To enable real deposits:
+  // 1. Integrate with blockchain services (Alchemy, Infura, BlockCypher, etc.)
+  // 2. Use their APIs to generate REAL wallet addresses
+  // 3. Set up webhooks to monitor incoming transactions
+  // 4. Update user balances when deposits are confirmed
+  
+  // Example webhook endpoint for deposit notifications (not implemented)
+  app.post("/api/webhooks/deposit", async (req, res) => {
+    // This would receive notifications from blockchain service
+    // when deposits are detected on user addresses
+    const { address, amount, currency, txHash, confirmations } = req.body;
+    
+    // Find wallet by address
+    // Update balance when confirmations >= required threshold
+    // Create transaction record
+    
+    res.json({ received: true });
+  });
 
   app.post("/api/transactions/withdraw", requireAuth, async (req: AuthRequest, res) => {
     try {
