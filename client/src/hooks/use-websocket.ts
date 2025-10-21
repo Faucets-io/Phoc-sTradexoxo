@@ -8,7 +8,7 @@ export function useWebSocket() {
 
   useEffect(() => {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.hostname}:5001`;
+    const wsUrl = `${protocol}//${window.location.host}/ws`;
     
     const websocket = new WebSocket(wsUrl);
 

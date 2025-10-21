@@ -88,8 +88,18 @@ app.use((req, res, next) => {
     log(`serving on port ${port}`);
   });
 
-  // WebSocket server for real-time updates
-  const wss = new WebSocketServer({ port: 5001, host: "0.0.0.0" });
+  // WebSocket server for real-time updates - attached to HTTP server
+  const wss = new WebSocketServer({ noServer: true });
+  
+  server.on('upgrade', (request, socket, head) => {
+    const { url, headers } = request;
+    if (url === '/ws' && headers.upgrade && headers.upgrade.toLowerCase() === 'websocket') {
+      wss.handleUpgrade(request, socket, head, (ws) => {
+        wss.emit('connection', ws, request);
+      });
+    }
+  });
+  
   setupWebSocket(wss);
-  log(`WebSocket server running at ws://0.0.0.0:5001`);
+  log(`WebSocket server integrated with HTTP server on port ${port}`);
 })();

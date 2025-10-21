@@ -88,28 +88,28 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-background pb-20 lg:pb-0">
-      <header className="sticky top-0 z-40 bg-card border-b border-border p-4">
+      <header className="sticky top-0 z-40 glass-card border-b border-border/50 p-4 backdrop-blur-xl">
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-2xl font-bold" data-testid="text-dashboard-title">Dashboard</h1>
+          <h1 className="text-2xl font-bold gradient-text" data-testid="text-dashboard-title">Dashboard</h1>
         </div>
       </header>
 
       <main className="max-w-4xl mx-auto p-4 space-y-6">
         {/* Total Assets Card */}
-        <div className="bg-primary rounded-lg p-6 relative overflow-hidden">
+        <div className="animated-gradient rounded-2xl p-6 relative overflow-hidden shadow-strong">
           <div className="relative z-10">
-            <p className="text-primary-foreground/90 text-sm mb-1">Total Assets≈</p>
+            <p className="text-white/90 text-sm mb-1 font-medium">Total Assets≈</p>
             <div className="flex items-end justify-between">
               <div>
-                <span className="text-primary-foreground text-4xl font-bold" data-testid="text-total-assets">
+                <span className="text-white text-4xl font-bold tracking-tight" data-testid="text-total-assets">
                   {totalValue.toFixed(2)}
                 </span>
-                <span className="text-primary-foreground/90 text-lg ml-2">USDT</span>
+                <span className="text-white/90 text-lg ml-2">USDT</span>
               </div>
               <Button 
                 variant="secondary" 
                 size="sm"
-                className="bg-white hover:bg-white/90 text-foreground"
+                className="bg-white/20 hover:bg-white/30 text-white backdrop-blur-md border-white/20 shadow-lg"
                 onClick={() => setLocation("/portfolio")}
                 data-testid="button-assets"
               >
@@ -117,11 +117,12 @@ export default function Dashboard() {
               </Button>
             </div>
           </div>
+          <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent pointer-events-none"></div>
         </div>
 
         {/* Quick Actions */}
         <div className="space-y-4">
-          <h3 className="text-base font-semibold">Quick Actions</h3>
+          <h3 className="text-lg font-bold">Quick Actions</h3>
           <div className="grid grid-cols-3 gap-4">
             {quickActions.map((action, i) => {
               const Icon = action.icon;
@@ -129,13 +130,13 @@ export default function Dashboard() {
                 <button
                   key={i}
                   onClick={() => setLocation(action.path)}
-                  className="flex flex-col items-center gap-2 p-3"
+                  className="flex flex-col items-center gap-3 p-4 rounded-2xl glass-card hover:shadow-medium transition-all duration-300 hover:scale-105"
                   data-testid={`button-${action.label.toLowerCase()}`}
                 >
-                  <div className={`h-14 w-14 rounded-full ${action.color} flex items-center justify-center`}>
+                  <div className={`h-14 w-14 rounded-2xl ${action.color} flex items-center justify-center shadow-soft`}>
                     <Icon className={`h-7 w-7 ${action.iconColor}`} />
                   </div>
-                  <span className="text-xs text-foreground">{action.label}</span>
+                  <span className="text-sm font-medium text-foreground">{action.label}</span>
                 </button>
               );
             })}
@@ -145,39 +146,40 @@ export default function Dashboard() {
         {/* Market Overview */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-base font-semibold">Market Overview</h3>
+            <h3 className="text-lg font-bold">Market Overview</h3>
             <Button 
               variant="ghost" 
               size="sm"
               onClick={() => setLocation("/market")}
               data-testid="button-view-all"
+              className="hover:bg-primary/10"
             >
               View All
               <ChevronRight className="h-4 w-4 ml-1" />
             </Button>
           </div>
-          <div className="space-y-2">
+          <div className="space-y-3">
             {markets.slice(0, 5).map((market) => (
               <Card 
                 key={market.symbol}
-                className="cursor-pointer hover-elevate"
+                className="cursor-pointer hover:shadow-medium transition-all duration-300 hover:scale-[1.02] glass-card"
                 onClick={() => setLocation(`/trade?pair=${market.symbol}`)}
               >
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-semibold">{market.symbol}</p>
+                      <p className="font-bold text-base">{market.symbol}</p>
                       <p className="text-sm text-muted-foreground">{market.name}</p>
                     </div>
                     <div className="text-right">
-                      <p className="font-mono font-semibold">
+                      <p className="font-mono font-bold text-base">
                         ${market.price.toLocaleString()}
                       </p>
-                      <div className={`flex items-center gap-1 text-sm ${market.change24h >= 0 ? "text-success" : "text-destructive"}`}>
+                      <div className={`flex items-center gap-1 text-sm font-semibold ${market.change24h >= 0 ? "text-success" : "text-destructive"}`}>
                         {market.change24h >= 0 ? (
-                          <TrendingUp className="h-3 w-3" />
+                          <TrendingUp className="h-3.5 w-3.5" />
                         ) : (
-                          <TrendingDown className="h-3 w-3" />
+                          <TrendingDown className="h-3.5 w-3.5" />
                         )}
                         {market.change24h >= 0 ? "+" : ""}
                         {market.change24h.toFixed(2)}%
@@ -192,11 +194,13 @@ export default function Dashboard() {
 
         {/* Recent Activity */}
         <div className="space-y-4">
-          <h3 className="text-base font-semibold">Recent Activity</h3>
-          <Card>
-            <CardContent className="p-6 text-center text-muted-foreground">
-              <Clock className="h-12 w-12 mx-auto mb-2 opacity-50" />
-              <p>No recent activity</p>
+          <h3 className="text-lg font-bold">Recent Activity</h3>
+          <Card className="glass-card">
+            <CardContent className="p-8 text-center text-muted-foreground">
+              <div className="inline-flex h-16 w-16 rounded-full bg-muted/50 items-center justify-center mb-3">
+                <Clock className="h-8 w-8 opacity-50" />
+              </div>
+              <p className="font-medium">No recent activity</p>
             </CardContent>
           </Card>
         </div>
