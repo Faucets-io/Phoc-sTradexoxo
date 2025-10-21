@@ -138,7 +138,7 @@
 }
 
 .hover-elevate:hover {
-  @apply brightness-95;
+  @apply brightness-95 scale-[1.02];
 }
 
 .active-elevate-2 {
@@ -146,7 +146,22 @@
 }
 
 .active-elevate-2:active {
-  @apply brightness-90;
+  @apply brightness-90 scale-[0.98];
+}
+
+/* Professional card styling */
+.professional-card {
+  @apply bg-card border border-border rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200;
+}
+
+/* Smooth number transitions */
+.animate-price-change {
+  animation: priceFlash 0.5s ease-in-out;
+}
+
+@keyframes priceFlash {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; transform: scale(1.05); }
 }
 
 /* Mobile-optimized scrollbars */

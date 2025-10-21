@@ -76,40 +76,41 @@ export default function Trade() {
 
     const generateTrade = () => {
       const basePrice = livePrice || currentPrice.price;
-      const priceVariation = (Math.random() - 0.5) * (basePrice * 0.001);
+      const priceVariation = (Math.random() - 0.5) * (basePrice * 0.002);
       const trade: RecentTrade = {
         id: `${Date.now()}-${Math.random()}`,
         price: basePrice + priceVariation,
-        amount: Math.random() * 2 + 0.001,
-        side: Math.random() > 0.5 ? "buy" : "sell",
+        amount: Math.random() * 1.5 + 0.01,
+        side: Math.random() > 0.48 ? "buy" : "sell",
         timestamp: new Date(),
       };
 
-      setRecentTrades(prev => [trade, ...prev].slice(0, 50));
+      setRecentTrades(prev => [trade, ...prev].slice(0, 100));
     };
 
-    // Generate initial trades immediately
+    // Generate initial trades immediately with realistic spread
     const initialTrades: RecentTrade[] = [];
     const basePrice = currentPrice.price;
     
-    for (let i = 0; i < 25; i++) {
-      const priceVariation = (Math.random() - 0.5) * (basePrice * 0.001);
+    for (let i = 0; i < 30; i++) {
+      const priceVariation = (Math.random() - 0.5) * (basePrice * 0.002);
+      const isBuy = Math.random() > 0.48;
       initialTrades.push({
-        id: `${Date.now()}-${Math.random()}-${i}`,
+        id: `initial-${Date.now()}-${i}`,
         price: basePrice + priceVariation,
-        amount: Math.random() * 2 + 0.001,
-        side: Math.random() > 0.5 ? "buy" : "sell",
-        timestamp: new Date(Date.now() - i * 1000),
+        amount: Math.random() * 1.5 + 0.01,
+        side: isBuy ? "buy" : "sell",
+        timestamp: new Date(Date.now() - i * 2000 - Math.random() * 1000),
       });
     }
     
     setRecentTrades(initialTrades);
 
-    // Continue generating trades
-    const interval = setInterval(generateTrade, 500 + Math.random() * 1000);
+    // Continue generating trades with varied intervals
+    const interval = setInterval(generateTrade, 800 + Math.random() * 1200);
 
     return () => clearInterval(interval);
-  }, [currentPrice?.price]);
+  }, [currentPrice?.price, livePrice]);
 
   // TradingView widget integration
   useEffect(() => {
@@ -285,12 +286,12 @@ export default function Trade() {
 
   return (
     <div className="min-h-screen bg-background pb-20 lg:pb-0">
-      <header className="sticky top-0 z-40 bg-card border-b border-border">
+      <header className="sticky top-0 z-40 bg-card/95 backdrop-blur-md border-b border-border shadow-sm">
         <div className="p-3 space-y-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Select value={selectedPair} onValueChange={setSelectedPair}>
-                <SelectTrigger className="w-[140px] border-0 font-bold text-lg" data-testid="select-pair">
+                <SelectTrigger className="w-[140px] border-0 font-bold text-lg hover:bg-muted/50 transition-colors" data-testid="select-pair">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -301,13 +302,13 @@ export default function Trade() {
               </Select>
               {currentPrice && (
                 <div className="flex items-center gap-3">
-                  <div>
-                    <div className={`text-2xl font-mono font-bold transition-colors ${isPositive ? 'text-success' : 'text-destructive'}`} data-testid="text-current-price">
+                  <div className="space-y-0.5">
+                    <div className={`text-2xl font-mono font-bold transition-all duration-300 ${isPositive ? 'text-success' : 'text-destructive'}`} data-testid="text-current-price">
                       ${livePrice ? livePrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : currentPrice.price.toLocaleString()}
                     </div>
-                    <div className={`text-xs flex items-center gap-1 ${isPositive ? 'text-success' : 'text-destructive'}`}>
+                    <div className={`text-xs flex items-center gap-1 font-semibold ${isPositive ? 'text-success' : 'text-destructive'}`}>
                       {isPositive ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-                      {isPositive ? '+' : ''}{priceChange.toFixed(2)}%
+                      {isPositive ? '+' : ''}{priceChange.toFixed(2)}% 24h
                     </div>
                   </div>
                 </div>
@@ -317,18 +318,18 @@ export default function Trade() {
 
           {/* Live Price Ticker */}
           {livePrice && currentPrice && (
-            <div className="flex items-center gap-4 text-xs font-mono">
-              <div className="flex items-center gap-1">
-                <span className="text-muted-foreground">24h High:</span>
-                <span className="text-success">${((currentPrice as any).high24h || currentPrice.price * 1.05).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            <div className="flex items-center gap-4 sm:gap-6 text-xs font-mono bg-muted/30 -mx-3 px-3 py-2 border-t border-border/50">
+              <div className="flex items-center gap-1.5">
+                <span className="text-muted-foreground font-medium">24h High</span>
+                <span className="text-success font-semibold">${((currentPrice as any).high24h || currentPrice.price * 1.05).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
-              <div className="flex items-center gap-1">
-                <span className="text-muted-foreground">24h Low:</span>
-                <span className="text-destructive">${((currentPrice as any).low24h || currentPrice.price * 0.95).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-muted-foreground font-medium">24h Low</span>
+                <span className="text-destructive font-semibold">${((currentPrice as any).low24h || currentPrice.price * 0.95).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
-              <div className="flex items-center gap-1">
-                <span className="text-muted-foreground">24h Vol:</span>
-                <span>${(currentPrice.volume24h || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-muted-foreground font-medium">24h Volume</span>
+                <span className="font-semibold">${(currentPrice.volume24h || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
               </div>
             </div>
           )}
@@ -390,32 +391,36 @@ export default function Trade() {
                 </div>
               </TabsContent>
               <TabsContent value="trades" className="p-3 m-0">
-                <div className="space-y-1 text-xs font-mono max-h-[400px] overflow-y-auto">
-                  <div className="grid grid-cols-3 text-muted-foreground pb-2 border-b sticky top-0 bg-background">
-                    <div>Price</div>
+                <div className="space-y-0 text-xs font-mono max-h-[400px] overflow-y-auto">
+                  <div className="grid grid-cols-3 text-muted-foreground pb-2 border-b sticky top-0 bg-card z-10 text-[10px] uppercase tracking-wider font-semibold">
+                    <div>Price (USDT)</div>
                     <div className="text-right">Amount</div>
                     <div className="text-right">Time</div>
                   </div>
                   {recentTrades.length > 0 ? (
-                    <div className="space-y-0.5">
-                      {recentTrades.map((trade) => (
+                    <div className="divide-y divide-border/30">
+                      {recentTrades.map((trade, idx) => (
                         <div
                           key={trade.id}
-                          className={`grid grid-cols-3 animate-in fade-in slide-in-from-top-2 duration-300 ${
+                          className={`grid grid-cols-3 py-1.5 animate-in fade-in slide-in-from-top-1 duration-200 hover:bg-muted/30 transition-colors ${
                             trade.side === "buy" ? "text-success" : "text-destructive"
                           }`}
+                          style={{ animationDelay: `${idx * 20}ms` }}
                         >
-                          <div>{trade.price.toFixed(2)}</div>
-                          <div className="text-right">{trade.amount.toFixed(4)}</div>
-                          <div className="text-right text-muted-foreground">
+                          <div className="font-semibold">{trade.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                          <div className="text-right opacity-80">{trade.amount.toFixed(6)}</div>
+                          <div className="text-right text-muted-foreground text-[10px]">
                             {format(trade.timestamp, "HH:mm:ss")}
                           </div>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <div className="text-center py-8 text-muted-foreground">
-                      Loading trades...
+                    <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                      <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-3">
+                        <MessageSquare className="h-6 w-6" />
+                      </div>
+                      <p className="text-sm font-medium">Loading market trades...</p>
                     </div>
                   )}
                 </div>
@@ -626,32 +631,36 @@ export default function Trade() {
               </TabsContent>
 
               <TabsContent value="trades" className="flex-1 m-0 overflow-auto p-3">
-                <div className="space-y-1 text-xs font-mono">
-                  <div className="grid grid-cols-3 text-muted-foreground pb-2 border-b sticky top-0 bg-card">
-                    <div>Price</div>
+                <div className="space-y-0 text-xs font-mono">
+                  <div className="grid grid-cols-3 text-muted-foreground pb-2 border-b sticky top-0 bg-card z-10 text-[10px] uppercase tracking-wider font-semibold">
+                    <div>Price (USDT)</div>
                     <div className="text-right">Amount</div>
                     <div className="text-right">Time</div>
                   </div>
                   {recentTrades.length > 0 ? (
-                    <div className="space-y-0.5">
-                      {recentTrades.map((trade) => (
+                    <div className="divide-y divide-border/30">
+                      {recentTrades.map((trade, idx) => (
                         <div
                           key={trade.id}
-                          className={`grid grid-cols-3 animate-in fade-in slide-in-from-top-2 duration-300 ${
+                          className={`grid grid-cols-3 py-1.5 animate-in fade-in slide-in-from-top-1 duration-200 hover:bg-muted/30 transition-colors ${
                             trade.side === "buy" ? "text-success" : "text-destructive"
                           }`}
+                          style={{ animationDelay: `${idx * 20}ms` }}
                         >
-                          <div>{trade.price.toFixed(2)}</div>
-                          <div className="text-right">{trade.amount.toFixed(4)}</div>
-                          <div className="text-right text-muted-foreground">
+                          <div className="font-semibold">{trade.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                          <div className="text-right opacity-80">{trade.amount.toFixed(6)}</div>
+                          <div className="text-right text-muted-foreground text-[10px]">
                             {format(trade.timestamp, "HH:mm:ss")}
                           </div>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <div className="text-center py-8 text-muted-foreground">
-                      Loading trades...
+                    <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                      <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-3">
+                        <MessageSquare className="h-6 w-6" />
+                      </div>
+                      <p className="text-sm font-medium">Loading market trades...</p>
                     </div>
                   )}
                 </div>
