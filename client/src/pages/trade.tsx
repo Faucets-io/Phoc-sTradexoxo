@@ -12,6 +12,15 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Order, Wallet } from "@shared/schema";
 import { TrendingUp, TrendingDown, BookOpen, MessageSquare } from "lucide-react";
+import { format } from "date-fns";
+
+interface RecentTrade {
+  id: string;
+  price: number;
+  amount: number;
+  side: "buy" | "sell";
+  timestamp: Date;
+}
 
 export default function Trade() {
   const { toast } = useToast();
@@ -42,6 +51,7 @@ export default function Trade() {
 
   const [livePrice, setLivePrice] = useState<number | null>(null);
   const chartContainerRef = useRef<HTMLDivElement>(null);
+  const [recentTrades, setRecentTrades] = useState<RecentTrade[]>([]);
 
   // Simulate real-time price updates
   useEffect(() => {
@@ -57,6 +67,35 @@ export default function Trade() {
 
     return () => clearInterval(interval);
   }, [currentPrice]);
+
+  // Simulate live trade feed
+  useEffect(() => {
+    if (!currentPrice?.price) return;
+
+    const generateTrade = () => {
+      const basePrice = livePrice || currentPrice.price;
+      const priceVariation = (Math.random() - 0.5) * (basePrice * 0.001);
+      const trade: RecentTrade = {
+        id: `${Date.now()}-${Math.random()}`,
+        price: basePrice + priceVariation,
+        amount: Math.random() * 2 + 0.001,
+        side: Math.random() > 0.5 ? "buy" : "sell",
+        timestamp: new Date(),
+      };
+
+      setRecentTrades(prev => [trade, ...prev].slice(0, 50));
+    };
+
+    // Generate initial trades
+    for (let i = 0; i < 20; i++) {
+      setTimeout(() => generateTrade(), i * 100);
+    }
+
+    // Continue generating trades
+    const interval = setInterval(generateTrade, 300 + Math.random() * 500);
+
+    return () => clearInterval(interval);
+  }, [currentPrice, livePrice]);
 
   // TradingView widget integration
   useEffect(() => {
@@ -337,8 +376,34 @@ export default function Trade() {
                 </div>
               </TabsContent>
               <TabsContent value="trades" className="p-3 m-0">
-                <div className="text-center py-8 text-muted-foreground text-sm">
-                  Recent trades will appear here
+                <div className="space-y-1 text-xs font-mono max-h-[400px] overflow-y-auto">
+                  <div className="grid grid-cols-3 text-muted-foreground pb-2 border-b sticky top-0 bg-background">
+                    <div>Price</div>
+                    <div className="text-right">Amount</div>
+                    <div className="text-right">Time</div>
+                  </div>
+                  {recentTrades.length > 0 ? (
+                    <div className="space-y-0.5">
+                      {recentTrades.map((trade) => (
+                        <div
+                          key={trade.id}
+                          className={`grid grid-cols-3 animate-in fade-in slide-in-from-top-2 duration-300 ${
+                            trade.side === "buy" ? "text-success" : "text-destructive"
+                          }`}
+                        >
+                          <div>{trade.price.toFixed(2)}</div>
+                          <div className="text-right">{trade.amount.toFixed(4)}</div>
+                          <div className="text-right text-muted-foreground">
+                            {format(trade.timestamp, "HH:mm:ss")}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      Loading trades...
+                    </div>
+                  )}
                 </div>
               </TabsContent>
             </Tabs>
@@ -548,14 +613,33 @@ export default function Trade() {
 
               <TabsContent value="trades" className="flex-1 m-0 overflow-auto p-3">
                 <div className="space-y-1 text-xs font-mono">
-                  <div className="grid grid-cols-3 text-muted-foreground pb-2 border-b">
+                  <div className="grid grid-cols-3 text-muted-foreground pb-2 border-b sticky top-0 bg-card">
                     <div>Price</div>
                     <div className="text-right">Amount</div>
                     <div className="text-right">Time</div>
                   </div>
-                  <div className="text-center py-8 text-muted-foreground">
-                    Recent trades will appear here
-                  </div>
+                  {recentTrades.length > 0 ? (
+                    <div className="space-y-0.5">
+                      {recentTrades.map((trade) => (
+                        <div
+                          key={trade.id}
+                          className={`grid grid-cols-3 animate-in fade-in slide-in-from-top-2 duration-300 ${
+                            trade.side === "buy" ? "text-success" : "text-destructive"
+                          }`}
+                        >
+                          <div>{trade.price.toFixed(2)}</div>
+                          <div className="text-right">{trade.amount.toFixed(4)}</div>
+                          <div className="text-right text-muted-foreground">
+                            {format(trade.timestamp, "HH:mm:ss")}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      Loading trades...
+                    </div>
+                  )}
                 </div>
               </TabsContent>
             </Tabs>
