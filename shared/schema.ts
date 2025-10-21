@@ -17,7 +17,8 @@ export const wallets = pgTable("wallets", {
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   currency: text("currency").notNull(),
   balance: decimal("balance", { precision: 20, scale: 8 }).notNull().default("0"),
-  address: text("address").notNull(),
+  address: text("address").notNull().unique(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const orders = pgTable("orders", {
