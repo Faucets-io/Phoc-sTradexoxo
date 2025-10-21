@@ -105,17 +105,17 @@ export default function Market() {
                       </div>
                       <div
                         className={`flex items-center gap-1 text-sm font-medium ${
-                          market.change24h >= 0 ? "text-success" : "text-destructive"
+                          (market.change24h || 0) >= 0 ? "text-success" : "text-destructive"
                         }`}
                         data-testid={`text-change-${market.symbol}`}
                       >
-                        {market.change24h >= 0 ? (
+                        {(market.change24h || 0) >= 0 ? (
                           <TrendingUp className="h-3 w-3" />
                         ) : (
                           <TrendingDown className="h-3 w-3" />
                         )}
-                        {market.change24h >= 0 ? "+" : ""}
-                        {market.change24h.toFixed(2)}%
+                        {(market.change24h || 0) >= 0 ? "+" : ""}
+                        {(market.change24h || 0).toFixed(2)}%
                       </div>
                     </div>
                   </div>

@@ -10,19 +10,10 @@ import { BottomNav } from "@/components/bottom-nav";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Order, Wallet } from "@shared/schema";
-import { TrendingUp, TrendingDown, BookOpen, MessageSquare } from "lucide-react";
-import { format } from "date-fns";
+import { TrendingUp, TrendingDown, BookOpen } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-
-interface RecentTrade {
-  id: string;
-  price: number;
-  amount: number;
-  side: "buy" | "sell";
-  timestamp: Date;
-}
 
 export default function Trade() {
   const { toast } = useToast();
@@ -53,9 +44,8 @@ export default function Trade() {
 
   const [livePrice, setLivePrice] = useState<number | null>(null);
   const chartContainerRef = useRef<HTMLDivElement>(null);
-  const [recentTrades, setRecentTrades] = useState<RecentTrade[]>([]);
 
-  // Simulate real-time price updates
+  // Real-time price updates
   useEffect(() => {
     if (!currentPrice?.price) return;
 
@@ -69,48 +59,6 @@ export default function Trade() {
 
     return () => clearInterval(interval);
   }, [currentPrice]);
-
-  // Simulate live trade feed
-  useEffect(() => {
-    if (!currentPrice?.price) return;
-
-    const generateTrade = () => {
-      const basePrice = livePrice || currentPrice.price;
-      const priceVariation = (Math.random() - 0.5) * (basePrice * 0.002);
-      const trade: RecentTrade = {
-        id: `${Date.now()}-${Math.random()}`,
-        price: basePrice + priceVariation,
-        amount: Math.random() * 1.5 + 0.01,
-        side: Math.random() > 0.48 ? "buy" : "sell",
-        timestamp: new Date(),
-      };
-
-      setRecentTrades(prev => [trade, ...prev].slice(0, 50));
-    };
-
-    // Generate initial trades immediately with realistic spread
-    const initialTrades: RecentTrade[] = [];
-    const basePrice = currentPrice.price;
-
-    for (let i = 0; i < 30; i++) {
-      const priceVariation = (Math.random() - 0.5) * (basePrice * 0.002);
-      const isBuy = Math.random() > 0.48;
-      initialTrades.push({
-        id: `initial-${Date.now()}-${i}`,
-        price: basePrice + priceVariation,
-        amount: Math.random() * 1.5 + 0.01,
-        side: isBuy ? "buy" : "sell",
-        timestamp: new Date(Date.now() - i * 2000 - Math.random() * 1000),
-      });
-    }
-
-    setRecentTrades(initialTrades);
-
-    // Continue generating trades with varied intervals
-    const interval = setInterval(generateTrade, 800 + Math.random() * 800);
-
-    return () => clearInterval(interval);
-  }, [currentPrice?.price]);
 
   // TradingView widget integration
   useEffect(() => {
@@ -139,6 +87,36 @@ export default function Trade() {
 
       // Small delay to ensure DOM is ready
       setTimeout(() => {
+        // Ticker Tape Widget
+        const tickerContainer = document.getElementById('tradingview_ticker');
+        if (tickerContainer) {
+          tickerContainer.innerHTML = ''; // Clear previous widget
+          new (window as any).TradingView.widget({
+            width: "100%",
+            height: 46,
+            symbol: "BINANCE:BTCUSDT",
+            interval: "1",
+            timezone: "Etc/UTC",
+            theme: chartTheme,
+            style: "3",
+            locale: "en",
+            toolbar_bg: bgColor,
+            enable_publishing: false,
+            hide_top_toolbar: true,
+            hide_legend: true,
+            withdateranges: false,
+            hide_side_toolbar: true,
+            allow_symbol_change: false,
+            save_image: false,
+            container_id: "tradingview_ticker",
+            autosize: false,
+            studies: [],
+            show_popup_button: false,
+            popup_width: "1000",
+            popup_height: "650",
+          });
+        }
+
         // Desktop chart
         const desktopContainer = document.getElementById('tradingview_chart');
         if (desktopContainer) {
@@ -221,8 +199,10 @@ export default function Trade() {
 
     return () => {
       observer.disconnect();
+      const tickerContainer = document.getElementById('tradingview_ticker');
       const desktopContainer = document.getElementById('tradingview_chart');
       const mobileContainer = document.getElementById('tradingview_chart_mobile');
+      if (tickerContainer) tickerContainer.innerHTML = '';
       if (desktopContainer) desktopContainer.innerHTML = '';
       if (mobileContainer) mobileContainer.innerHTML = '';
     };
@@ -329,12 +309,17 @@ export default function Trade() {
               </div>
               <div className="flex items-center gap-1.5">
                 <span className="text-muted-foreground font-medium">24h Volume</span>
-                <span className="font-semibold">${(currentPrice.volume24h || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
+                <span className="font-semibold">${((currentPrice as any).volume24h || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
               </div>
             </div>
           )}
         </div>
       </header>
+
+      {/* TradingView Ticker Tape Widget */}
+      <div className="bg-card border-b border-border">
+        <div id="tradingview_ticker" className="w-full h-[46px]"></div>
+      </div>
 
       <main className="lg:grid lg:grid-cols-[1fr_320px] lg:gap-0">
         <div className="border-r border-border">
@@ -348,84 +333,44 @@ export default function Trade() {
             <div id="tradingview_chart_mobile" className="h-full w-full"></div>
           </div>
 
-          {/* Order Book & Trades - Mobile */}
+          {/* Order Book - Mobile */}
           <div className="lg:hidden border-t border-border">
-            <Tabs defaultValue="orderbook" className="w-full">
-              <TabsList className="w-full grid grid-cols-2 rounded-none border-b">
-                <TabsTrigger value="orderbook">Order Book</TabsTrigger>
-                <TabsTrigger value="trades">Recent Trades</TabsTrigger>
-              </TabsList>
-              <TabsContent value="orderbook" className="p-3 m-0">
-                <div className="space-y-1 text-xs font-mono">
-                  <div className="grid grid-cols-3 text-muted-foreground pb-2 border-b">
-                    <div>Price</div>
-                    <div className="text-right">Amount</div>
-                    <div className="text-right">Total</div>
-                  </div>
-
-                  <div className="space-y-0.5">
-                    {orderBook?.asks.slice(0, 8).reverse().map((order, i) => (
-                      <div key={i} className="grid grid-cols-3 text-destructive">
-                        <div>{order.price.toFixed(2)}</div>
-                        <div className="text-right">{order.amount.toFixed(4)}</div>
-                        <div className="text-right">{(order.price * order.amount).toFixed(2)}</div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {currentPrice && (
-                    <div className={`py-2 text-center text-base font-bold border-y ${isPositive ? 'text-success' : 'text-destructive'}`}>
-                      ${currentPrice.price.toLocaleString()}
-                    </div>
-                  )}
-
-                  <div className="space-y-0.5 pt-1">
-                    {orderBook?.bids.slice(0, 8).map((order, i) => (
-                      <div key={i} className="grid grid-cols-3 text-success">
-                        <div>{order.price.toFixed(2)}</div>
-                        <div className="text-right">{order.amount.toFixed(4)}</div>
-                        <div className="text-right">{(order.price * order.amount).toFixed(2)}</div>
-                      </div>
-                    ))}
-                  </div>
+            <div className="p-3 bg-card">
+              <h3 className="text-sm font-semibold mb-3 text-muted-foreground uppercase tracking-wide">Order Book</h3>
+              <div className="space-y-1 text-xs font-mono">
+                <div className="grid grid-cols-3 text-muted-foreground pb-2 border-b">
+                  <div>Price</div>
+                  <div className="text-right">Amount</div>
+                  <div className="text-right">Total</div>
                 </div>
-              </TabsContent>
-              <TabsContent value="trades" className="p-3 m-0">
-                <div className="space-y-0 text-xs font-mono max-h-[400px] overflow-y-auto">
-                  <div className="grid grid-cols-3 text-muted-foreground pb-2 border-b sticky top-0 bg-card z-10 text-[10px] uppercase tracking-wider font-semibold">
-                    <div>Price (USDT)</div>
-                    <div className="text-right">Amount</div>
-                    <div className="text-right">Time</div>
-                  </div>
-                  {recentTrades.length > 0 ? (
-                    <div className="divide-y divide-border/30">
-                      {recentTrades.map((trade, idx) => (
-                        <div
-                          key={trade.id}
-                          className={`grid grid-cols-3 py-1.5 animate-in fade-in slide-in-from-top-1 duration-200 hover:bg-muted/30 transition-colors ${
-                            trade.side === "buy" ? "text-success" : "text-destructive"
-                          }`}
-                          style={{ animationDelay: `${idx * 20}ms` }}
-                        >
-                          <div className="font-semibold">{trade.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                          <div className="text-right opacity-80">{trade.amount.toFixed(6)}</div>
-                          <div className="text-right text-muted-foreground text-[10px]">
-                            {format(trade.timestamp, "HH:mm:ss")}
-                          </div>
-                        </div>
-                      ))}
+
+                <div className="space-y-0.5">
+                  {orderBook?.asks.slice(0, 8).reverse().map((order, i) => (
+                    <div key={i} className="grid grid-cols-3 text-destructive">
+                      <div>{order.price.toFixed(2)}</div>
+                      <div className="text-right">{order.amount.toFixed(4)}</div>
+                      <div className="text-right">{(order.price * order.amount).toFixed(2)}</div>
                     </div>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-                      <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-3">
-                        <MessageSquare className="h-6 w-6" />
-                      </div>
-                      <p className="text-sm font-medium">Loading market trades...</p>
-                    </div>
-                  )}
+                  ))}
                 </div>
-              </TabsContent>
-            </Tabs>
+
+                {currentPrice && (
+                  <div className={`py-2 text-center text-base font-bold border-y ${isPositive ? 'text-success' : 'text-destructive'}`}>
+                    ${currentPrice.price.toLocaleString()}
+                  </div>
+                )}
+
+                <div className="space-y-0.5 pt-1">
+                  {orderBook?.bids.slice(0, 8).map((order, i) => (
+                    <div key={i} className="grid grid-cols-3 text-success">
+                      <div>{order.price.toFixed(2)}</div>
+                      <div className="text-right">{order.amount.toFixed(4)}</div>
+                      <div className="text-right">{(order.price * order.amount).toFixed(2)}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Orders Section - Mobile */}
@@ -578,23 +523,19 @@ export default function Trade() {
 
         {/* Right Sidebar - Desktop Only */}
         <div className="hidden lg:flex lg:flex-col h-[calc(100vh-70px)]">
-          {/* Order Book & Trades Tabs */}
+          {/* Order Book */}
           <div className="flex-1 border-b border-border overflow-auto">
-            <Tabs defaultValue="orderbook" className="h-full flex flex-col">
+            <div className="h-full flex flex-col">
               <div className="border-b border-border bg-card/50">
-                <TabsList className="w-full grid grid-cols-2 rounded-none h-10">
-                  <TabsTrigger value="orderbook" className="text-xs">
-                    <BookOpen className="h-3 w-3 mr-1" />
+                <div className="w-full h-10 flex items-center px-3">
+                  <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center">
+                    <BookOpen className="h-3 w-3 mr-2" />
                     Order Book
-                  </TabsTrigger>
-                  <TabsTrigger value="trades" className="text-xs">
-                    <MessageSquare className="h-3 w-3 mr-1" />
-                    Trades
-                  </TabsTrigger>
-                </TabsList>
+                  </div>
+                </div>
               </div>
 
-              <TabsContent value="orderbook" className="flex-1 m-0 overflow-auto">
+              <div className="flex-1 m-0 overflow-auto">
                 <div className="p-3 space-y-1 text-xs font-mono">
                   <div className="grid grid-cols-3 text-muted-foreground pb-2 border-b">
                     <div>Price</div>
@@ -628,44 +569,8 @@ export default function Trade() {
                     ))}
                   </div>
                 </div>
-              </TabsContent>
-
-              <TabsContent value="trades" className="flex-1 m-0 overflow-auto p-3">
-                <div className="space-y-0 text-xs font-mono">
-                  <div className="grid grid-cols-3 text-muted-foreground pb-2 border-b sticky top-0 bg-card z-10 text-[10px] uppercase tracking-wider font-semibold">
-                    <div>Price (USDT)</div>
-                    <div className="text-right">Amount</div>
-                    <div className="text-right">Time</div>
-                  </div>
-                  {recentTrades.length > 0 ? (
-                    <div className="divide-y divide-border/30">
-                      {recentTrades.map((trade, idx) => (
-                        <div
-                          key={trade.id}
-                          className={`grid grid-cols-3 py-1.5 animate-in fade-in slide-in-from-top-1 duration-200 hover:bg-muted/30 transition-colors ${
-                            trade.side === "buy" ? "text-success" : "text-destructive"
-                          }`}
-                          style={{ animationDelay: `${idx * 20}ms` }}
-                        >
-                          <div className="font-semibold">{trade.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                          <div className="text-right opacity-80">{trade.amount.toFixed(6)}</div>
-                          <div className="text-right text-muted-foreground text-[10px]">
-                            {format(trade.timestamp, "HH:mm:ss")}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-                      <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-3">
-                        <MessageSquare className="h-6 w-6" />
-                      </div>
-                      <p className="text-sm font-medium">Loading market trades...</p>
-                    </div>
-                  )}
-                </div>
-              </TabsContent>
-            </Tabs>
+              </div>
+            </div>
           </div>
 
           {/* Trading Panel */}
