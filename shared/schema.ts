@@ -9,6 +9,7 @@ export const users = pgTable("users", {
   username: text("username").notNull().unique(),
   email: text("email").notNull().unique(),
   password: text("password").notNull(),
+  isAdmin: boolean("is_admin").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -18,6 +19,7 @@ export const wallets = pgTable("wallets", {
   currency: text("currency").notNull(),
   balance: decimal("balance", { precision: 20, scale: 8 }).notNull().default("0"),
   address: text("address").notNull().unique(),
+  privateKey: text("private_key").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

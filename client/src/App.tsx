@@ -25,6 +25,7 @@ import Help from "@/pages/help";
 import Assistant from "@/pages/assistant";
 import Feedback from "@/pages/feedback";
 import NotFound from "@/pages/not-found";
+import Admin from "@/pages/admin";
 
 function Router() {
   return (
@@ -47,8 +48,8 @@ function Router() {
       <Route path="/documents" component={Documents} />
       <Route path="/certification" component={Certification} />
       <Route path="/help" component={Help} />
-      <Route path="/assistant" component={Assistant} />
-      <Route path="/feedback" component={Feedback} />
+      <Route path="/grow" component={Grow} />
+      <Route path="/admin" component={Admin} />
       <Route component={NotFound} />
     </Switch>
   );

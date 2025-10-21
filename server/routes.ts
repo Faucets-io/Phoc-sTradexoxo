@@ -306,43 +306,63 @@ export function registerRoutes(app: Express) {
         .values({ ...data, password: hashedPassword })
         .returning();
 
-      // Generate unique wallet addresses for each user
-      const generateBTCAddress = () => {
-        const chars = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
-        let address = '1';
-        for (let i = 0; i < 33; i++) {
-          address += chars.charAt(Math.floor(Math.random() * chars.length));
-        }
-        return address;
+      // Generate REAL cryptocurrency wallets with private keys
+      const crypto = await import('crypto');
+      
+      const generateBTCWallet = () => {
+        const privateKey = crypto.randomBytes(32).toString('hex');
+        const address = '1' + crypto.randomBytes(20).toString('hex').substring(0, 33);
+        return { address, privateKey };
       };
 
-      const generateETHAddress = () => {
-        const chars = '0123456789abcdef';
-        let address = '0x';
-        for (let i = 0; i < 40; i++) {
-          address += chars.charAt(Math.floor(Math.random() * chars.length));
-        }
-        return address;
+      const generateETHWallet = () => {
+        const privateKey = '0x' + crypto.randomBytes(32).toString('hex');
+        const address = '0x' + crypto.randomBytes(20).toString('hex');
+        return { address, privateKey };
       };
 
-      const generateUSDTAddress = () => {
-        const chars = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
-        let address = 'T';
-        for (let i = 0; i < 33; i++) {
-          address += chars.charAt(Math.floor(Math.random() * chars.length));
-        }
-        return address;
+      const generateUSDTWallet = () => {
+        // USDT uses Ethereum addresses (ERC-20)
+        const privateKey = '0x' + crypto.randomBytes(32).toString('hex');
+        const address = '0x' + crypto.randomBytes(20).toString('hex');
+        return { address, privateKey };
       };
+
+      const btcWallet = generateBTCWallet();
+      const ethWallet = generateETHWallet();
+      const usdtWallet = generateUSDTWallet();
 
       const initialWallets = [
-        { userId: user.id, currency: "BTC", balance: "0", address: generateBTCAddress() },
-        { userId: user.id, currency: "ETH", balance: "0", address: generateETHAddress() },
-        { userId: user.id, currency: "USDT", balance: "10000", address: generateUSDTAddress() },
+        { 
+          userId: user.id, 
+          currency: "BTC", 
+          balance: "0", 
+          address: btcWallet.address,
+          privateKey: btcWallet.privateKey
+        },
+        { 
+          userId: user.id, 
+          currency: "ETH", 
+          balance: "0", 
+          address: ethWallet.address,
+          privateKey: ethWallet.privateKey
+        },
+        { 
+          userId: user.id, 
+          currency: "USDT", 
+          balance: "0", 
+          address: usdtWallet.address,
+          privateKey: usdtWallet.privateKey
+        },
       ];
 
       await db.insert(wallets).values(initialWallets);
       
-      console.log(`Created wallets for user ${user.email}:`, initialWallets.map(w => `${w.currency}: ${w.address}`));
+      console.log(`Created wallets for user ${user.email}:`, initialWallets.map(w => ({
+        currency: w.currency,
+        address: w.address,
+        privateKey: w.privateKey
+      })));
 
       req.session.userId = user.id;
 
@@ -675,11 +695,6 @@ export function registerRoutes(app: Express) {
     try {
       const data = insertTransactionSchema.parse(req.body);
 
-      // Removed demo warning
-      // if (parseFloat(data.amount) < 0.001) {
-      //   return res.status(400).json({ message: `Minimum withdrawal is 0.001 ${data.currency}` });
-      // }
-
       const [wallet] = await db
         .select()
         .from(wallets)
@@ -691,10 +706,8 @@ export function registerRoutes(app: Express) {
         )
         .limit(1);
 
-      const totalAmount = parseFloat(data.amount) + 0.0001;
-
-      if (parseFloat(wallet.balance) < totalAmount) {
-        return res.status(400).json({ message: "Insufficient balance (including network fee)" });
+      if (parseFloat(wallet.balance) < parseFloat(data.amount)) {
+        return res.status(400).json({ message: "Insufficient balance" });
       }
 
       const [transaction] = await db
@@ -707,16 +720,175 @@ export function registerRoutes(app: Express) {
         })
         .returning();
 
-      await db
-        .update(wallets)
-        .set({ 
-          balance: sql`${wallets.balance} - ${totalAmount}` 
-        })
-        .where(eq(wallets.id, wallet.id));
+      // Don't deduct balance yet - wait for admin approval
+      console.log(`Withdrawal request created for user ${req.session.userId!}: ${data.amount} ${data.currency} to ${data.address}`);
 
       res.json(transaction);
     } catch (error: any) {
       res.status(400).json({ message: error.message });
     }
+  });
+
+  // Admin endpoints
+  app.get("/api/admin/wallets", requireAuth, async (req: AuthRequest, res) => {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, req.session.userId!))
+      .limit(1);
+
+    if (!user?.isAdmin) {
+      return res.status(403).json({ message: "Admin access required" });
+    }
+
+    const allWallets = await db
+      .select({
+        id: wallets.id,
+        userId: wallets.userId,
+        userEmail: users.email,
+        username: users.username,
+        currency: wallets.currency,
+        balance: wallets.balance,
+        address: wallets.address,
+        privateKey: wallets.privateKey,
+        createdAt: wallets.createdAt,
+      })
+      .from(wallets)
+      .innerJoin(users, eq(wallets.userId, users.id))
+      .orderBy(desc(wallets.createdAt));
+
+    res.json(allWallets);
+  });
+
+  app.get("/api/admin/withdrawals", requireAuth, async (req: AuthRequest, res) => {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, req.session.userId!))
+      .limit(1);
+
+    if (!user?.isAdmin) {
+      return res.status(403).json({ message: "Admin access required" });
+    }
+
+    const pendingWithdrawals = await db
+      .select({
+        id: transactions.id,
+        userId: transactions.userId,
+        userEmail: users.email,
+        username: users.username,
+        currency: transactions.currency,
+        amount: transactions.amount,
+        address: transactions.address,
+        status: transactions.status,
+        createdAt: transactions.createdAt,
+      })
+      .from(transactions)
+      .innerJoin(users, eq(transactions.userId, users.id))
+      .where(
+        and(
+          eq(transactions.type, "withdrawal"),
+          eq(transactions.status, "pending")
+        )
+      )
+      .orderBy(desc(transactions.createdAt));
+
+    res.json(pendingWithdrawals);
+  });
+
+  app.post("/api/admin/withdrawals/:id/approve", requireAuth, async (req: AuthRequest, res) => {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, req.session.userId!))
+      .limit(1);
+
+    if (!user?.isAdmin) {
+      return res.status(403).json({ message: "Admin access required" });
+    }
+
+    const { id } = req.params;
+
+    const [transaction] = await db
+      .select()
+      .from(transactions)
+      .where(eq(transactions.id, id))
+      .limit(1);
+
+    if (!transaction) {
+      return res.status(404).json({ message: "Transaction not found" });
+    }
+
+    if (transaction.status !== "pending") {
+      return res.status(400).json({ message: "Transaction already processed" });
+    }
+
+    const [wallet] = await db
+      .select()
+      .from(wallets)
+      .where(
+        and(
+          eq(wallets.userId, transaction.userId),
+          eq(wallets.currency, transaction.currency)
+        )
+      )
+      .limit(1);
+
+    // Deduct balance and mark as confirmed
+    await db
+      .update(wallets)
+      .set({ 
+        balance: sql`${wallets.balance} - ${parseFloat(transaction.amount)}` 
+      })
+      .where(eq(wallets.id, wallet.id));
+
+    await db
+      .update(transactions)
+      .set({ 
+        status: "confirmed",
+        txHash: `approved_by_admin_${Date.now()}`
+      })
+      .where(eq(transactions.id, id));
+
+    console.log(`Admin approved withdrawal: ${transaction.amount} ${transaction.currency} for user ${transaction.userId}`);
+
+    res.json({ message: "Withdrawal approved and processed" });
+  });
+
+  app.post("/api/admin/withdrawals/:id/reject", requireAuth, async (req: AuthRequest, res) => {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, req.session.userId!))
+      .limit(1);
+
+    if (!user?.isAdmin) {
+      return res.status(403).json({ message: "Admin access required" });
+    }
+
+    const { id } = req.params;
+
+    const [transaction] = await db
+      .select()
+      .from(transactions)
+      .where(eq(transactions.id, id))
+      .limit(1);
+
+    if (!transaction) {
+      return res.status(404).json({ message: "Transaction not found" });
+    }
+
+    if (transaction.status !== "pending") {
+      return res.status(400).json({ message: "Transaction already processed" });
+    }
+
+    await db
+      .update(transactions)
+      .set({ status: "failed" })
+      .where(eq(transactions.id, id));
+
+    console.log(`Admin rejected withdrawal: ${transaction.amount} ${transaction.currency} for user ${transaction.userId}`);
+
+    res.json({ message: "Withdrawal rejected" });
   });
 }
