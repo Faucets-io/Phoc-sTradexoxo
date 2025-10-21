@@ -85,13 +85,13 @@ export default function Trade() {
         timestamp: new Date(),
       };
 
-      setRecentTrades(prev => [trade, ...prev].slice(0, 100));
+      setRecentTrades(prev => [trade, ...prev].slice(0, 50));
     };
 
     // Generate initial trades immediately with realistic spread
     const initialTrades: RecentTrade[] = [];
     const basePrice = currentPrice.price;
-    
+
     for (let i = 0; i < 30; i++) {
       const priceVariation = (Math.random() - 0.5) * (basePrice * 0.002);
       const isBuy = Math.random() > 0.48;
@@ -103,14 +103,14 @@ export default function Trade() {
         timestamp: new Date(Date.now() - i * 2000 - Math.random() * 1000),
       });
     }
-    
+
     setRecentTrades(initialTrades);
 
     // Continue generating trades with varied intervals
-    const interval = setInterval(generateTrade, 800 + Math.random() * 1200);
+    const interval = setInterval(generateTrade, 800 + Math.random() * 800);
 
     return () => clearInterval(interval);
-  }, [currentPrice?.price, livePrice]);
+  }, [currentPrice?.price]);
 
   // TradingView widget integration
   useEffect(() => {

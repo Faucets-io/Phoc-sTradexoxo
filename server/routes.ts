@@ -341,6 +341,8 @@ export function registerRoutes(app: Express) {
       ];
 
       await db.insert(wallets).values(initialWallets);
+      
+      console.log(`Created wallets for user ${user.email}:`, initialWallets.map(w => `${w.currency}: ${w.address}`));
 
       req.session.userId = user.id;
 
