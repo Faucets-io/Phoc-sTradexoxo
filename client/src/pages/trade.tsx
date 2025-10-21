@@ -22,6 +22,13 @@ export default function Trade() {
   const [side, setSide] = useState<"buy" | "sell">("buy");
   const [amount, setAmount] = useState("");
   const [price, setPrice] = useState("");
+  const [recentTrades, setRecentTrades] = useState<Array<{
+    id: string;
+    price: number;
+    amount: number;
+    time: string;
+    side: 'buy' | 'sell';
+  }>>([]);
 
   const { data: currentPrice } = useQuery<{ price: number; change24h: number }>({
     queryKey: ["/api/markets/price", selectedPair],
@@ -263,15 +270,6 @@ export default function Trade() {
 
   const priceChange = currentPrice?.change24h || 0;
   const isPositive = priceChange >= 0;
-
-  // Simulated recent trades
-  const [recentTrades, setRecentTrades] = useState<Array<{
-    id: string;
-    price: number;
-    amount: number;
-    time: string;
-    side: 'buy' | 'sell';
-  }>>([]);
 
   // Generate realistic simulated trades
   useEffect(() => {
