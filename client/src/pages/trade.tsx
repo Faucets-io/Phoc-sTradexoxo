@@ -49,6 +49,22 @@ export default function Trade() {
     asks: Array<{ price: number; amount: number }>;
   } | null>(null);
 
+  // Initialize live order book with empty data
+  useEffect(() => {
+    if (!liveOrderBook && currentPrice) {
+      const basePrice = currentPrice.price;
+      const initialBids = Array.from({ length: 12 }, (_, i) => ({
+        price: basePrice * (0.999 - i * 0.0002),
+        amount: Math.random() * 2 + 0.5
+      }));
+      const initialAsks = Array.from({ length: 12 }, (_, i) => ({
+        price: basePrice * (1.001 + i * 0.0002),
+        amount: Math.random() * 2 + 0.5
+      }));
+      setLiveOrderBook({ bids: initialBids, asks: initialAsks });
+    }
+  }, [currentPrice, liveOrderBook]);
+
   // Real-time price updates
   useEffect(() => {
     if (!currentPrice?.price) return;
@@ -66,14 +82,11 @@ export default function Trade() {
 
   // Simulated live order book updates
   useEffect(() => {
-    if (!orderBook || !currentPrice) return;
-
-    // Initialize with real order book data
-    setLiveOrderBook(orderBook);
+    if (!currentPrice || !liveOrderBook) return;
 
     const interval = setInterval(() => {
       setLiveOrderBook(prev => {
-        if (!prev) return orderBook;
+        if (!prev) return prev;
 
         // Simulate order book updates with realistic changes
         const updatedBids = prev.bids.map(order => ({
@@ -113,7 +126,7 @@ export default function Trade() {
     }, 3000);
 
     return () => clearInterval(interval);
-  }, [orderBook, currentPrice]);
+  }, [currentPrice, liveOrderBook]);
 
   // TradingView widget integration
   useEffect(() => {
