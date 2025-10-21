@@ -400,7 +400,7 @@ export default function Trade() {
                 </div>
 
                 <div className="space-y-0.5">
-                  {(liveOrderBook || orderBook)?.asks.slice(0, 8).reverse().map((order, i) => (
+                  {liveOrderBook?.asks.slice(0, 8).reverse().map((order, i) => (
                     <div key={i} className="grid grid-cols-3 text-destructive transition-all">
                       <div>{order.price.toFixed(2)}</div>
                       <div className="text-right">{order.amount.toFixed(4)}</div>
@@ -416,7 +416,7 @@ export default function Trade() {
                 )}
 
                 <div className="space-y-0.5 pt-1">
-                  {(liveOrderBook || orderBook)?.bids.slice(0, 8).map((order, i) => (
+                  {liveOrderBook?.bids.slice(0, 8).map((order, i) => (
                     <div key={i} className="grid grid-cols-3 text-success transition-all">
                       <div>{order.price.toFixed(2)}</div>
                       <div className="text-right">{order.amount.toFixed(4)}</div>
@@ -599,7 +599,7 @@ export default function Trade() {
                   </div>
 
                   <div className="space-y-0.5">
-                    {(liveOrderBook || orderBook)?.asks.slice(0, 10).reverse().map((order, i) => (
+                    {liveOrderBook?.asks.slice(0, 10).reverse().map((order, i) => (
                       <div key={i} className="grid grid-cols-3 text-destructive hover:bg-destructive/5 cursor-pointer transition-all">
                         <div>{order.price.toFixed(2)}</div>
                         <div className="text-right">{order.amount.toFixed(4)}</div>
@@ -615,7 +615,7 @@ export default function Trade() {
                   )}
 
                   <div className="space-y-0.5 pt-1">
-                    {(liveOrderBook || orderBook)?.bids.slice(0, 10).map((order, i) => (
+                    {liveOrderBook?.bids.slice(0, 10).map((order, i) => (
                       <div key={i} className="grid grid-cols-3 text-success hover:bg-success/5 cursor-pointer transition-all">
                         <div>{order.price.toFixed(2)}</div>
                         <div className="text-right">{order.amount.toFixed(4)}</div>
