@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -75,7 +74,8 @@ export default function Admin() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/withdrawals"] });
-      toast({ 
+      toast({
+        variant: "success",
         title: "Withdrawal approved",
         description: "The withdrawal has been successfully processed."
       });
@@ -90,7 +90,8 @@ export default function Admin() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/withdrawals"] });
-      toast({ 
+      toast({
+        variant: "destructive",
         title: "Withdrawal rejected",
         description: "The withdrawal request has been declined."
       });
@@ -103,11 +104,12 @@ export default function Admin() {
       if (!res.ok) throw new Error("Failed to ban user");
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
-      toast({ 
+      toast({
+        variant: "success",
         title: "User banned",
-        description: "The user has been banned successfully."
+        description: `User ${variables} has been banned successfully.`,
       });
     },
   });
@@ -118,11 +120,12 @@ export default function Admin() {
       if (!res.ok) throw new Error("Failed to unban user");
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
-      toast({ 
+      toast({
+        variant: "success",
         title: "User unbanned",
-        description: "The user has been unbanned successfully."
+        description: `User ${variables} has been unbanned successfully.`,
       });
     },
   });
@@ -133,12 +136,13 @@ export default function Admin() {
       if (!res.ok) throw new Error("Failed to delete user");
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/wallets"] });
-      toast({ 
+      toast({
+        variant: "success",
         title: "User deleted",
-        description: "The user and all their data has been deleted."
+        description: "The user and all their data has been deleted.",
       });
     },
   });
@@ -155,7 +159,8 @@ export default function Admin() {
       setNotificationMessage("");
       setNotificationType("info");
       setSelectedUserId(null);
-      toast({ 
+      toast({
+        variant: "success",
         title: "Notification sent",
         description: "The notification has been sent to the user."
       });
@@ -173,7 +178,8 @@ export default function Admin() {
       setNotificationTitle("");
       setNotificationMessage("");
       setNotificationType("info");
-      toast({ 
+      toast({
+        variant: "success",
         title: "Notification sent",
         description: "The notification has been sent to all users."
       });
@@ -183,7 +189,8 @@ export default function Admin() {
   const copyToClipboard = async (text: string, id: string) => {
     await navigator.clipboard.writeText(text);
     setCopiedKey(id);
-    toast({ 
+    toast({
+      variant: "success",
       title: "Copied to clipboard",
       description: "Private key has been copied securely."
     });
@@ -193,9 +200,9 @@ export default function Admin() {
   const handleSendNotification = () => {
     if (!notificationTitle || !notificationMessage) {
       toast({
+        variant: "destructive",
         title: "Error",
         description: "Please fill in all fields",
-        variant: "destructive"
       });
       return;
     }
@@ -382,8 +389,8 @@ export default function Admin() {
                 ) : (
                   <div className="space-y-3">
                     {allUsers.map((user) => (
-                      <div 
-                        key={user.id} 
+                      <div
+                        key={user.id}
                         className="professional-card p-4 hover:shadow-medium transition-all duration-200"
                       >
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -501,8 +508,8 @@ export default function Admin() {
                 ) : (
                   <div className="space-y-3">
                     {withdrawals.map((w) => (
-                      <div 
-                        key={w.id} 
+                      <div
+                        key={w.id}
                         className="professional-card p-4 hover:scale-[1.01] transition-all duration-200"
                       >
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -593,8 +600,8 @@ export default function Admin() {
                 ) : (
                   <div className="space-y-3">
                     {wallets.map((w) => (
-                      <div 
-                        key={w.id} 
+                      <div
+                        key={w.id}
                         className="professional-card p-4 hover:shadow-medium transition-all duration-200"
                       >
                         <div className="space-y-4">
