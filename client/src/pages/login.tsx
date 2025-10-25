@@ -42,7 +42,7 @@ export default function Login() {
     },
     onSuccess: () => {
       toast({
-        title: "Welcome back!",
+        title: "✓ Welcome back!",
         description: "You've successfully logged in.",
         variant: "success",
       });
@@ -50,7 +50,7 @@ export default function Login() {
     },
     onError: (error: Error) => {
       toast({
-        title: "Login failed",
+        title: "✗ Login failed",
         description: error.message,
         variant: "destructive",
       });

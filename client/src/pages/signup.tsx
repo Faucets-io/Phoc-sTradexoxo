@@ -42,7 +42,7 @@ export default function Signup() {
     },
     onSuccess: () => {
       toast({
-        title: "Account created!",
+        title: "✓ Account created!",
         description: "Welcome to CryptoTrade. You're now signed in.",
         variant: "success",
       });
@@ -50,7 +50,7 @@ export default function Signup() {
     },
     onError: (error: Error) => {
       toast({
-        title: "Signup failed",
+        title: "✗ Signup failed",
         description: error.message,
         variant: "destructive",
       });
