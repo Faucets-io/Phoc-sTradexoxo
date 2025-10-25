@@ -44,6 +44,7 @@ export default function Signup() {
       toast({
         title: "Account created!",
         description: "Welcome to CryptoTrade. You're now signed in.",
+        variant: "success",
       });
       setLocation("/dashboard");
     },

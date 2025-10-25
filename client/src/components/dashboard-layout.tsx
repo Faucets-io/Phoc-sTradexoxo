@@ -46,6 +46,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       toast({
         title: "Logged out",
         description: "You've been successfully logged out.",
+        variant: "success",
       });
       setLocation("/");
     },

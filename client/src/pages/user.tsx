@@ -46,6 +46,7 @@ export default function UserCenter() {
       toast({
         title: "Logged out",
         description: "You've been successfully logged out.",
+        variant: "success",
       });
       setLocation("/");
     },
