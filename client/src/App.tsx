@@ -4,6 +4,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
+import ProtectedRoute from "@/components/protected-route";
 import Landing from "@/pages/landing";
 import Login from "@/pages/login";
 import Signup from "@/pages/signup";
@@ -34,24 +35,57 @@ function Router() {
       <Route path="/" component={Landing} />
       <Route path="/login" component={Login} />
       <Route path="/signup" component={Signup} />
-      <Route path="/dashboard" component={Dashboard} />
-      <Route path="/market" component={Market} />
-      <Route path="/portfolio" component={Portfolio} />
-      <Route path="/trade" component={Trade} />
-      <Route path="/grow" component={Grow} />
-      <Route path="/user" component={UserCenter} />
-      <Route path="/transactions" component={Transactions} />
-      <Route path="/deposit" component={Deposit} />
-      <Route path="/withdraw" component={Withdraw} />
-      <Route path="/history" component={TradingHistory} />
-      <Route path="/settings" component={Settings} />
-      <Route path="/notifications" component={Notifications} />
-      <Route path="/documents" component={Documents} />
-      <Route path="/certification" component={Certification} />
-      <Route path="/help" component={Help} />
-      <Route path="/grow" component={Grow} />
-      <Route path="/admin" component={Admin} />
-      <Route path="/kyc" component={KycVerification} />
+      <Route path="/dashboard">
+        <ProtectedRoute><Dashboard /></ProtectedRoute>
+      </Route>
+      <Route path="/market">
+        <ProtectedRoute><Market /></ProtectedRoute>
+      </Route>
+      <Route path="/portfolio">
+        <ProtectedRoute><Portfolio /></ProtectedRoute>
+      </Route>
+      <Route path="/trade">
+        <ProtectedRoute><Trade /></ProtectedRoute>
+      </Route>
+      <Route path="/grow">
+        <ProtectedRoute><Grow /></ProtectedRoute>
+      </Route>
+      <Route path="/user">
+        <ProtectedRoute><UserCenter /></ProtectedRoute>
+      </Route>
+      <Route path="/transactions">
+        <ProtectedRoute><Transactions /></ProtectedRoute>
+      </Route>
+      <Route path="/deposit">
+        <ProtectedRoute><Deposit /></ProtectedRoute>
+      </Route>
+      <Route path="/withdraw">
+        <ProtectedRoute><Withdraw /></ProtectedRoute>
+      </Route>
+      <Route path="/history">
+        <ProtectedRoute><TradingHistory /></ProtectedRoute>
+      </Route>
+      <Route path="/settings">
+        <ProtectedRoute><Settings /></ProtectedRoute>
+      </Route>
+      <Route path="/notifications">
+        <ProtectedRoute><Notifications /></ProtectedRoute>
+      </Route>
+      <Route path="/documents">
+        <ProtectedRoute><Documents /></ProtectedRoute>
+      </Route>
+      <Route path="/certification">
+        <ProtectedRoute><Certification /></ProtectedRoute>
+      </Route>
+      <Route path="/help">
+        <ProtectedRoute><Help /></ProtectedRoute>
+      </Route>
+      <Route path="/admin">
+        <ProtectedRoute><Admin /></ProtectedRoute>
+      </Route>
+      <Route path="/kyc">
+        <ProtectedRoute><KycVerification /></ProtectedRoute>
+      </Route>
       <Route component={NotFound} />
     </Switch>
   );
