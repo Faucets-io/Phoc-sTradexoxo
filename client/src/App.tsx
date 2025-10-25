@@ -26,6 +26,7 @@ import Assistant from "@/pages/assistant";
 import Feedback from "@/pages/feedback";
 import NotFound from "@/pages/not-found";
 import Admin from "@/pages/admin";
+import KycVerification from "@/pages/kyc-verification";
 
 function Router() {
   return (
@@ -50,6 +51,7 @@ function Router() {
       <Route path="/help" component={Help} />
       <Route path="/grow" component={Grow} />
       <Route path="/admin" component={Admin} />
+      <Route path="/kyc" component={KycVerification} />
       <Route component={NotFound} />
     </Switch>
   );

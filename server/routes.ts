@@ -1,9 +1,9 @@
 import type { Express } from "express";
 import { db } from "./db";
-import { users, wallets, orders, trades, transactions } from "@shared/schema";
+import { users, wallets, orders, trades, transactions, notifications, kycVerifications, activityLogs } from "@shared/schema";
 import { eq, and, or, desc, sql } from "drizzle-orm";
 import bcrypt from "bcryptjs";
-import { insertUserSchema, loginSchema, insertOrderSchema, insertTransactionSchema } from "@shared/schema";
+import { insertUserSchema, loginSchema, insertOrderSchema, insertTransactionSchema, insertNotificationSchema, insertKycVerificationSchema, insertActivityLogSchema } from "@shared/schema";
 import { requireAuth, type AuthRequest } from "./auth";
 import { WebSocketServer, WebSocket } from "ws";
 import rateLimit from "express-rate-limit";
@@ -366,6 +366,22 @@ export function registerRoutes(app: Express) {
 
       req.session.userId = user.id;
 
+      await db.insert(notifications).values({
+        userId: user.id,
+        type: "success",
+        title: "Welcome to CryptoTrade",
+        message: "Your account has been successfully created. Start trading now!",
+        read: false,
+      });
+
+      await db.insert(activityLogs).values({
+        userId: user.id,
+        action: "signup",
+        description: "User account created",
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'] || '',
+      });
+
       const { password: _, ...userWithoutPassword } = user;
       res.json(userWithoutPassword);
     } catch (error: any) {
@@ -395,6 +411,14 @@ export function registerRoutes(app: Express) {
 
       req.session.userId = user.id;
 
+      await db.insert(activityLogs).values({
+        userId: user.id,
+        action: "login",
+        description: "User logged in",
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'] || '',
+      });
+
       const { password: _, ...userWithoutPassword } = user;
       res.json(userWithoutPassword);
     } catch (error: any) {
@@ -402,7 +426,17 @@ export function registerRoutes(app: Express) {
     }
   });
 
-  app.post("/api/auth/logout", (req, res) => {
+  app.post("/api/auth/logout", requireAuth, async (req: AuthRequest, res) => {
+    const userId = req.session.userId;
+
+    await db.insert(activityLogs).values({
+      userId: userId!,
+      action: "logout",
+      description: "User logged out",
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'] || '',
+    });
+
     req.session.destroy(() => {
       res.json({ message: "Logged out successfully" });
     });
@@ -890,5 +924,207 @@ export function registerRoutes(app: Express) {
     console.log(`Admin rejected withdrawal: ${transaction.amount} ${transaction.currency} for user ${transaction.userId}`);
 
     res.json({ message: "Withdrawal rejected" });
+  });
+
+  app.get("/api/notifications", requireAuth, async (req: AuthRequest, res) => {
+    const userNotifications = await db
+      .select()
+      .from(notifications)
+      .where(eq(notifications.userId, req.session.userId!))
+      .orderBy(desc(notifications.createdAt))
+      .limit(50);
+
+    res.json(userNotifications);
+  });
+
+  app.post("/api/notifications/:id/read", requireAuth, async (req: AuthRequest, res) => {
+    const { id } = req.params;
+
+    const [notification] = await db
+      .select()
+      .from(notifications)
+      .where(eq(notifications.id, id))
+      .limit(1);
+
+    if (!notification || notification.userId !== req.session.userId) {
+      return res.status(404).json({ message: "Notification not found" });
+    }
+
+    await db
+      .update(notifications)
+      .set({ read: true })
+      .where(eq(notifications.id, id));
+
+    res.json({ message: "Notification marked as read" });
+  });
+
+  app.post("/api/notifications/read-all", requireAuth, async (req: AuthRequest, res) => {
+    await db
+      .update(notifications)
+      .set({ read: true })
+      .where(eq(notifications.userId, req.session.userId!));
+
+    res.json({ message: "All notifications marked as read" });
+  });
+
+  app.get("/api/kyc", requireAuth, async (req: AuthRequest, res) => {
+    const [kycStatus] = await db
+      .select()
+      .from(kycVerifications)
+      .where(eq(kycVerifications.userId, req.session.userId!))
+      .limit(1);
+
+    res.json(kycStatus || null);
+  });
+
+  app.post("/api/kyc/submit", requireAuth, async (req: AuthRequest, res) => {
+    try {
+      const data = insertKycVerificationSchema.parse(req.body);
+
+      const existingKyc = await db
+        .select()
+        .from(kycVerifications)
+        .where(eq(kycVerifications.userId, req.session.userId!))
+        .limit(1);
+
+      if (existingKyc.length > 0) {
+        return res.status(400).json({ message: "KYC verification already submitted" });
+      }
+
+      const [kyc] = await db
+        .insert(kycVerifications)
+        .values({ ...data, userId: req.session.userId! })
+        .returning();
+
+      await db.insert(notifications).values({
+        userId: req.session.userId!,
+        type: "info",
+        title: "KYC Verification Submitted",
+        message: "Your identity verification documents have been submitted and are under review.",
+        read: false,
+      });
+
+      await db.insert(activityLogs).values({
+        userId: req.session.userId!,
+        action: "kyc_submitted",
+        description: "User submitted KYC verification documents",
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'] || '',
+      });
+
+      res.json(kyc);
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/admin/kyc/:id/approve", requireAuth, async (req: AuthRequest, res) => {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, req.session.userId!))
+      .limit(1);
+
+    if (!user?.isAdmin) {
+      return res.status(403).json({ message: "Admin access required" });
+    }
+
+    const { id } = req.params;
+
+    const [kyc] = await db
+      .select()
+      .from(kycVerifications)
+      .where(eq(kycVerifications.id, id))
+      .limit(1);
+
+    if (!kyc) {
+      return res.status(404).json({ message: "KYC verification not found" });
+    }
+
+    await db
+      .update(kycVerifications)
+      .set({ status: "approved", updatedAt: new Date() })
+      .where(eq(kycVerifications.id, id));
+
+    await db.insert(notifications).values({
+      userId: kyc.userId,
+      type: "success",
+      title: "KYC Verification Approved",
+      message: "Your identity has been verified. You now have full access to all features.",
+      read: false,
+    });
+
+    await db.insert(activityLogs).values({
+      userId: kyc.userId,
+      action: "kyc_approved",
+      description: `KYC verification approved by admin`,
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'] || '',
+    });
+
+    res.json({ message: "KYC verification approved" });
+  });
+
+  app.post("/api/admin/kyc/:id/reject", requireAuth, async (req: AuthRequest, res) => {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, req.session.userId!))
+      .limit(1);
+
+    if (!user?.isAdmin) {
+      return res.status(403).json({ message: "Admin access required" });
+    }
+
+    const { id } = req.params;
+    const { reason } = req.body;
+
+    if (!reason) {
+      return res.status(400).json({ message: "Rejection reason is required" });
+    }
+
+    const [kyc] = await db
+      .select()
+      .from(kycVerifications)
+      .where(eq(kycVerifications.id, id))
+      .limit(1);
+
+    if (!kyc) {
+      return res.status(404).json({ message: "KYC verification not found" });
+    }
+
+    await db
+      .update(kycVerifications)
+      .set({ status: "rejected", rejectionReason: reason, updatedAt: new Date() })
+      .where(eq(kycVerifications.id, id));
+
+    await db.insert(notifications).values({
+      userId: kyc.userId,
+      type: "error",
+      title: "KYC Verification Rejected",
+      message: `Your identity verification was rejected. Reason: ${reason}`,
+      read: false,
+    });
+
+    await db.insert(activityLogs).values({
+      userId: kyc.userId,
+      action: "kyc_rejected",
+      description: `KYC verification rejected by admin. Reason: ${reason}`,
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'] || '',
+    });
+
+    res.json({ message: "KYC verification rejected" });
+  });
+
+  app.get("/api/activity-logs", requireAuth, async (req: AuthRequest, res) => {
+    const logs = await db
+      .select()
+      .from(activityLogs)
+      .where(eq(activityLogs.userId, req.session.userId!))
+      .orderBy(desc(activityLogs.createdAt))
+      .limit(100);
+
+    res.json(logs);
   });
 }
