@@ -1115,6 +1115,265 @@ export function registerRoutes(app: Express) {
     res.json({ message: "KYC verification rejected" });
   });
 
+  // Admin user management endpoints
+  app.get("/api/admin/users", requireAuth, async (req: AuthRequest, res) => {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, req.session.userId!))
+      .limit(1);
+
+    if (!user?.isAdmin) {
+      return res.status(403).json({ message: "Admin access required" });
+    }
+
+    const allUsers = await db
+      .select({
+        id: users.id,
+        username: users.username,
+        email: users.email,
+        isAdmin: users.isAdmin,
+        isBanned: users.isBanned,
+        createdAt: users.createdAt,
+      })
+      .from(users)
+      .orderBy(desc(users.createdAt));
+
+    res.json(allUsers);
+  });
+
+  app.post("/api/admin/users/:id/ban", requireAuth, async (req: AuthRequest, res) => {
+    const [admin] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, req.session.userId!))
+      .limit(1);
+
+    if (!admin?.isAdmin) {
+      return res.status(403).json({ message: "Admin access required" });
+    }
+
+    const { id } = req.params;
+
+    if (id === req.session.userId) {
+      return res.status(400).json({ message: "Cannot ban yourself" });
+    }
+
+    const [targetUser] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, id))
+      .limit(1);
+
+    if (!targetUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (targetUser.isAdmin) {
+      return res.status(400).json({ message: "Cannot ban admin users" });
+    }
+
+    await db
+      .update(users)
+      .set({ isBanned: true })
+      .where(eq(users.id, id));
+
+    await db.insert(notifications).values({
+      userId: id,
+      type: "error",
+      title: "Account Suspended",
+      message: "Your account has been suspended by an administrator. Please contact support for more information.",
+      read: false,
+    });
+
+    await db.insert(activityLogs).values({
+      userId: id,
+      action: "banned",
+      description: `User banned by admin ${admin.username}`,
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'] || '',
+    });
+
+    res.json({ message: "User banned successfully" });
+  });
+
+  app.post("/api/admin/users/:id/unban", requireAuth, async (req: AuthRequest, res) => {
+    const [admin] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, req.session.userId!))
+      .limit(1);
+
+    if (!admin?.isAdmin) {
+      return res.status(403).json({ message: "Admin access required" });
+    }
+
+    const { id } = req.params;
+
+    const [targetUser] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, id))
+      .limit(1);
+
+    if (!targetUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    await db
+      .update(users)
+      .set({ isBanned: false })
+      .where(eq(users.id, id));
+
+    await db.insert(notifications).values({
+      userId: id,
+      type: "success",
+      title: "Account Restored",
+      message: "Your account has been restored. You can now access all features.",
+      read: false,
+    });
+
+    await db.insert(activityLogs).values({
+      userId: id,
+      action: "unbanned",
+      description: `User unbanned by admin ${admin.username}`,
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'] || '',
+    });
+
+    res.json({ message: "User unbanned successfully" });
+  });
+
+  app.delete("/api/admin/users/:id", requireAuth, async (req: AuthRequest, res) => {
+    const [admin] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, req.session.userId!))
+      .limit(1);
+
+    if (!admin?.isAdmin) {
+      return res.status(403).json({ message: "Admin access required" });
+    }
+
+    const { id } = req.params;
+
+    if (id === req.session.userId) {
+      return res.status(400).json({ message: "Cannot delete yourself" });
+    }
+
+    const [targetUser] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, id))
+      .limit(1);
+
+    if (!targetUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (targetUser.isAdmin) {
+      return res.status(400).json({ message: "Cannot delete admin users" });
+    }
+
+    // Delete related data first
+    await db.delete(wallets).where(eq(wallets.userId, id));
+    await db.delete(orders).where(eq(orders.userId, id));
+    await db.delete(transactions).where(eq(transactions.userId, id));
+    await db.delete(notifications).where(eq(notifications.userId, id));
+    await db.delete(kycVerifications).where(eq(kycVerifications.userId, id));
+    await db.delete(activityLogs).where(eq(activityLogs.userId, id));
+    
+    // Delete user
+    await db.delete(users).where(eq(users.id, id));
+
+    console.log(`Admin ${admin.username} deleted user ${targetUser.username} (${targetUser.email})`);
+
+    res.json({ message: "User deleted successfully" });
+  });
+
+  app.post("/api/admin/users/:id/notify", requireAuth, async (req: AuthRequest, res) => {
+    const [admin] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, req.session.userId!))
+      .limit(1);
+
+    if (!admin?.isAdmin) {
+      return res.status(403).json({ message: "Admin access required" });
+    }
+
+    const { id } = req.params;
+    const { title, message, type } = req.body;
+
+    if (!title || !message) {
+      return res.status(400).json({ message: "Title and message are required" });
+    }
+
+    const [targetUser] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, id))
+      .limit(1);
+
+    if (!targetUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    await db.insert(notifications).values({
+      userId: id,
+      type: type || "info",
+      title,
+      message,
+      read: false,
+    });
+
+    await db.insert(activityLogs).values({
+      userId: id,
+      action: "admin_notification",
+      description: `Notification sent by admin: ${title}`,
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'] || '',
+    });
+
+    res.json({ message: "Notification sent successfully" });
+  });
+
+  app.post("/api/admin/notify-all", requireAuth, async (req: AuthRequest, res) => {
+    const [admin] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, req.session.userId!))
+      .limit(1);
+
+    if (!admin?.isAdmin) {
+      return res.status(403).json({ message: "Admin access required" });
+    }
+
+    const { title, message, type } = req.body;
+
+    if (!title || !message) {
+      return res.status(400).json({ message: "Title and message are required" });
+    }
+
+    const allUsers = await db.select().from(users);
+
+    const notificationPromises = allUsers.map(user => 
+      db.insert(notifications).values({
+        userId: user.id,
+        type: type || "info",
+        title,
+        message,
+        read: false,
+      })
+    );
+
+    await Promise.all(notificationPromises);
+
+    console.log(`Admin ${admin.username} sent notification to all users: ${title}`);
+
+    res.json({ message: `Notification sent to ${allUsers.length} users` });
+  });
+
   app.get("/api/activity-logs", requireAuth, async (req: AuthRequest, res) => {
     const logs = await db
       .select()
