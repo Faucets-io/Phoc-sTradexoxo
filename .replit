@@ -15,7 +15,7 @@ localPort = 5000
 externalPort = 80
 
 [[ports]]
-localPort = 5001
+localPort = 33031
 externalPort = 3000
 
 [[ports]]
@@ -45,6 +45,9 @@ author = "agent"
 task = "shell.exec"
 args = "npm run dev"
 waitForPort = 5000
+
+[workflows.workflow.metadata]
+outputType = "webview"
 
 [agent]
 integrations = ["javascript_websocket:1.0.0", "javascript_database:1.0.0", "javascript_stripe:1.0.0"]
