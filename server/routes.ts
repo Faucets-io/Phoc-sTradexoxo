@@ -360,8 +360,7 @@ export function registerRoutes(app: Express) {
       
       console.log(`Created wallets for user ${user.email}:`, initialWallets.map(w => ({
         currency: w.currency,
-        address: w.address,
-        privateKey: w.privateKey
+        address: w.address
       })));
 
       req.session.userId = user.id;
@@ -784,7 +783,6 @@ export function registerRoutes(app: Express) {
         currency: wallets.currency,
         balance: wallets.balance,
         address: wallets.address,
-        privateKey: wallets.privateKey,
         createdAt: wallets.createdAt,
       })
       .from(wallets)
