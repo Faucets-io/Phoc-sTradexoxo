@@ -44,9 +44,7 @@ function Router() {
       <Route path="/portfolio">
         <ProtectedRoute><Portfolio /></ProtectedRoute>
       </Route>
-      <Route path="/trade">
-        <ProtectedRoute><Trade /></ProtectedRoute>
-      </Route>
+      <Route path="/trade" component={Trade} />
       <Route path="/grow">
         <ProtectedRoute><Grow /></ProtectedRoute>
       </Route>
