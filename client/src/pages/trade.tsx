@@ -89,29 +89,58 @@ export default function Trade() {
         if (!prev) return prev;
 
         // Simulate order book updates with realistic changes
-        const updatedBids = prev.bids.map(order => ({
-          price: order.price + (Math.random() - 0.5) * (currentPrice.price * 0.0001),
-          amount: Math.max(0.0001, order.amount + (Math.random() - 0.5) * 0.5)
-        }));
+        const updatedBids = prev.bids.map((order, index) => {
+          // Vary update frequency - orders closer to spread update more
+          const updateChance = 0.7 - (index * 0.05);
+          if (Math.random() > updateChance) return order;
+          
+          return {
+            price: order.price + (Math.random() - 0.5) * (currentPrice.price * 0.00015),
+            amount: Math.max(0.001, order.amount + (Math.random() - 0.5) * 0.8)
+          };
+        });
 
-        const updatedAsks = prev.asks.map(order => ({
-          price: order.price + (Math.random() - 0.5) * (currentPrice.price * 0.0001),
-          amount: Math.max(0.0001, order.amount + (Math.random() - 0.5) * 0.5)
-        }));
+        const updatedAsks = prev.asks.map((order, index) => {
+          const updateChance = 0.7 - (index * 0.05);
+          if (Math.random() > updateChance) return order;
+          
+          return {
+            price: order.price + (Math.random() - 0.5) * (currentPrice.price * 0.00015),
+            amount: Math.max(0.001, order.amount + (Math.random() - 0.5) * 0.8)
+          };
+        });
 
-        // Occasionally add/remove orders to simulate market activity
-        if (Math.random() > 0.7 && updatedBids.length < 15) {
-          updatedBids.push({
-            price: currentPrice.price * (0.995 + Math.random() * 0.004),
-            amount: Math.random() * 2
-          });
+        // Occasionally add new orders or remove filled ones
+        if (Math.random() > 0.8) {
+          // Remove a random order (simulate filled)
+          if (updatedBids.length > 8 && Math.random() > 0.5) {
+            const removeIndex = Math.floor(Math.random() * updatedBids.length);
+            updatedBids.splice(removeIndex, 1);
+          }
+          
+          // Add a new bid order
+          if (updatedBids.length < 15) {
+            updatedBids.push({
+              price: currentPrice.price * (0.996 + Math.random() * 0.003),
+              amount: 0.5 + Math.random() * 2.5
+            });
+          }
         }
 
-        if (Math.random() > 0.7 && updatedAsks.length < 15) {
-          updatedAsks.push({
-            price: currentPrice.price * (1.001 + Math.random() * 0.004),
-            amount: Math.random() * 2
-          });
+        if (Math.random() > 0.8) {
+          // Remove a random order (simulate filled)
+          if (updatedAsks.length > 8 && Math.random() > 0.5) {
+            const removeIndex = Math.floor(Math.random() * updatedAsks.length);
+            updatedAsks.splice(removeIndex, 1);
+          }
+          
+          // Add a new ask order
+          if (updatedAsks.length < 15) {
+            updatedAsks.push({
+              price: currentPrice.price * (1.001 + Math.random() * 0.003),
+              amount: 0.5 + Math.random() * 2.5
+            });
+          }
         }
 
         // Sort orders
@@ -123,7 +152,7 @@ export default function Trade() {
           asks: updatedAsks.slice(0, 12)
         };
       });
-    }, 3000);
+    }, 1500);
 
     return () => clearInterval(interval);
   }, [currentPrice, liveOrderBook]);
@@ -404,38 +433,68 @@ export default function Trade() {
           {/* Order Book - Mobile */}
           <div className="lg:hidden border-t border-border">
             <div className="p-3 bg-card">
-              <h3 className="text-sm font-semibold mb-3 text-muted-foreground uppercase tracking-wide">Order Book</h3>
+              <h3 className="text-sm font-semibold mb-3 text-muted-foreground uppercase tracking-wide flex items-center">
+                <BookOpen className="h-3 w-3 mr-2" />
+                Order Book
+              </h3>
               <div className="space-y-1 text-xs font-mono">
-                <div className="grid grid-cols-3 text-muted-foreground pb-2 border-b">
-                  <div>Price</div>
+                <div className="grid grid-cols-2 text-muted-foreground pb-2 border-b font-semibold">
+                  <div>Price (USDT)</div>
                   <div className="text-right">Amount</div>
-                  <div className="text-right">Total</div>
                 </div>
 
+                {/* Sell Orders (Asks) - Red */}
                 <div className="space-y-0.5">
-                  {(liveOrderBook?.asks || []).slice(0, 8).reverse().map((order, i) => (
-                    <div key={i} className="grid grid-cols-3 text-destructive transition-all">
-                      <div>{order.price.toFixed(2)}</div>
-                      <div className="text-right">{order.amount.toFixed(4)}</div>
-                      <div className="text-right">{(order.price * order.amount).toFixed(2)}</div>
-                    </div>
-                  ))}
+                  {(liveOrderBook?.asks || []).slice(0, 8).reverse().map((order, i) => {
+                    const maxAmount = Math.max(...(liveOrderBook?.asks || []).map(o => o.amount));
+                    const depthPercent = (order.amount / maxAmount) * 100;
+                    
+                    return (
+                      <div 
+                        key={i} 
+                        className="relative grid grid-cols-2 text-destructive transition-all duration-200 py-0.5 px-1 rounded"
+                      >
+                        <div 
+                          className="absolute inset-0 bg-destructive/10 transition-all duration-300 ease-out rounded"
+                          style={{ width: `${depthPercent}%` }}
+                        />
+                        <div className="relative z-10 font-semibold">{order.price.toFixed(2)}</div>
+                        <div className="relative z-10 text-right">{order.amount.toFixed(6)}</div>
+                      </div>
+                    );
+                  })}
                 </div>
 
+                {/* Current Price Display */}
                 {currentPrice && (
-                  <div className={`py-2 text-center text-base font-bold border-y ${isPositive ? 'text-success' : 'text-destructive'}`}>
-                    ${livePrice ? livePrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : currentPrice.price.toLocaleString()}
+                  <div className={`py-2.5 px-2 text-center text-base font-bold border-y my-2 rounded ${isPositive ? 'text-success bg-success/5' : 'text-destructive bg-destructive/5'}`}>
+                    <div className="flex items-center justify-center gap-2">
+                      {isPositive ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
+                      <span>${livePrice ? livePrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : currentPrice.price.toLocaleString()}</span>
+                    </div>
                   </div>
                 )}
 
+                {/* Buy Orders (Bids) - Green */}
                 <div className="space-y-0.5 pt-1">
-                  {(liveOrderBook?.bids || []).slice(0, 8).map((order, i) => (
-                    <div key={i} className="grid grid-cols-3 text-success transition-all">
-                      <div>{order.price.toFixed(2)}</div>
-                      <div className="text-right">{order.amount.toFixed(4)}</div>
-                      <div className="text-right">{(order.price * order.amount).toFixed(2)}</div>
-                    </div>
-                  ))}
+                  {(liveOrderBook?.bids || []).slice(0, 8).map((order, i) => {
+                    const maxAmount = Math.max(...(liveOrderBook?.bids || []).map(o => o.amount));
+                    const depthPercent = (order.amount / maxAmount) * 100;
+                    
+                    return (
+                      <div 
+                        key={i} 
+                        className="relative grid grid-cols-2 text-success transition-all duration-200 py-0.5 px-1 rounded"
+                      >
+                        <div 
+                          className="absolute inset-0 bg-success/10 transition-all duration-300 ease-out rounded"
+                          style={{ width: `${depthPercent}%` }}
+                        />
+                        <div className="relative z-10 font-semibold">{order.price.toFixed(2)}</div>
+                        <div className="relative z-10 text-right">{order.amount.toFixed(6)}</div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -605,36 +664,63 @@ export default function Trade() {
 
               <div className="flex-1 m-0 overflow-auto">
                 <div className="p-3 space-y-1 text-xs font-mono">
-                  <div className="grid grid-cols-3 text-muted-foreground pb-2 border-b">
-                    <div>Price</div>
-                    <div className="text-right">Size</div>
-                    <div className="text-right">Total</div>
+                  <div className="grid grid-cols-2 text-muted-foreground pb-2 border-b font-semibold">
+                    <div>Price (USDT)</div>
+                    <div className="text-right">Amount</div>
                   </div>
 
+                  {/* Sell Orders (Asks) - Red */}
                   <div className="space-y-0.5">
-                    {(liveOrderBook?.asks || []).slice(0, 10).reverse().map((order, i) => (
-                      <div key={i} className="grid grid-cols-3 text-destructive hover:bg-destructive/5 cursor-pointer transition-all">
-                        <div>{order.price.toFixed(2)}</div>
-                        <div className="text-right">{order.amount.toFixed(4)}</div>
-                        <div className="text-right">{(order.price * order.amount).toFixed(2)}</div>
-                      </div>
-                    ))}
+                    {(liveOrderBook?.asks || []).slice(0, 10).reverse().map((order, i) => {
+                      const maxAmount = Math.max(...(liveOrderBook?.asks || []).map(o => o.amount));
+                      const depthPercent = (order.amount / maxAmount) * 100;
+                      
+                      return (
+                        <div 
+                          key={i} 
+                          className="relative grid grid-cols-2 text-destructive hover:brightness-110 cursor-pointer transition-all duration-200 py-0.5 px-1 rounded group"
+                        >
+                          <div 
+                            className="absolute inset-0 bg-destructive/10 transition-all duration-300 ease-out rounded"
+                            style={{ width: `${depthPercent}%` }}
+                          />
+                          <div className="relative z-10 font-semibold">{order.price.toFixed(2)}</div>
+                          <div className="relative z-10 text-right">{order.amount.toFixed(6)}</div>
+                        </div>
+                      );
+                    })}
                   </div>
 
+                  {/* Current Price Display */}
                   {currentPrice && (
-                    <div className={`py-2 text-center text-base font-bold border-y ${isPositive ? 'text-success' : 'text-destructive'}`}>
-                      ${livePrice ? livePrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : currentPrice.price.toLocaleString()}
+                    <div className={`py-2.5 px-2 text-center text-base font-bold border-y my-2 rounded ${isPositive ? 'text-success bg-success/5' : 'text-destructive bg-destructive/5'}`}>
+                      <div className="flex items-center justify-center gap-2">
+                        {isPositive ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
+                        <span>${livePrice ? livePrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : currentPrice.price.toLocaleString()}</span>
+                      </div>
                     </div>
                   )}
 
+                  {/* Buy Orders (Bids) - Green */}
                   <div className="space-y-0.5 pt-1">
-                    {(liveOrderBook?.bids || []).slice(0, 10).map((order, i) => (
-                      <div key={i} className="grid grid-cols-3 text-success hover:bg-success/5 cursor-pointer transition-all">
-                        <div>{order.price.toFixed(2)}</div>
-                        <div className="text-right">{order.amount.toFixed(4)}</div>
-                        <div className="text-right">{(order.price * order.amount).toFixed(2)}</div>
-                      </div>
-                    ))}
+                    {(liveOrderBook?.bids || []).slice(0, 10).map((order, i) => {
+                      const maxAmount = Math.max(...(liveOrderBook?.bids || []).map(o => o.amount));
+                      const depthPercent = (order.amount / maxAmount) * 100;
+                      
+                      return (
+                        <div 
+                          key={i} 
+                          className="relative grid grid-cols-2 text-success hover:brightness-110 cursor-pointer transition-all duration-200 py-0.5 px-1 rounded group"
+                        >
+                          <div 
+                            className="absolute inset-0 bg-success/10 transition-all duration-300 ease-out rounded"
+                            style={{ width: `${depthPercent}%` }}
+                          />
+                          <div className="relative z-10 font-semibold">{order.price.toFixed(2)}</div>
+                          <div className="relative z-10 text-right">{order.amount.toFixed(6)}</div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
